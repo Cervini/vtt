@@ -1,17 +1,51 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+
+
+class Table extends React.Component {
+    constructor(props){
+        super(props);
+        this.state = {
+            code: props
+        };
+    }
+
+    render() {
+        return (
+            <div className='container'>
+                
+            </div>
+        );
+    }
+}
+
+function Home() {
+    return (
+        <div className='container'>
+            <div className='container window'>
+                    <button className='btn' type='submit' onClick={() => {
+                        fetch('../../create', { method: 'POST' })
+                        .then(response => response.json())
+                            .then((response) => {
+                                if(response.ok){
+                                    console.log('Code generated: ' + response.code);
+                                }
+                                
+                        });
+                    }}>Create</button>
+                <button className='btn'>Join</button>
+                <form action='../../post' method='post'>
+                    <button className='btn' type='submit'>Test connectivity</button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+//====================================================================================================
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <Home />
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
