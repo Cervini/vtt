@@ -8,63 +8,111 @@ import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
 
 class Table extends React.Component {
+
+    //constructor, required room 'code'
     constructor(props){
         super(props);
         this.state = {
             code: props,
             map: battlemap,
-            actions: '',
-            appear: true,
+            appear: false,
             tokens: [],
             tstyle: 'token-hello',
-            grid: false
-        };
+            grid: true,
+            width: 0,
+            height: 0
+            };
+        this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     }
-
+        
+    //when component mounts, add event listener for window resize
+    componentDidMount() {
+        this.updateWindowDimensions();
+        window.addEventListener('resize', this.updateWindowDimensions);
+    }
+    
+    //when component unmounts, remove event listener for window resize
+    componentWillUnmount() {
+        window.removeEventListener('resize', this.updateWindowDimensions);
+    }
+    
     //prenvent default behaviour when dragging an image
     preventDragHandler(e){
         e.preventDefault(); 
     }
 
-    renderActions(){
+    //render the map
+    renderMap(){
         return (
-         <div className='popup DM'>
-            <label title='Upload Map' htmlFor='uploadMap'>
-                <MdMap />
-                <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
-                    try{
-                        this.setState({map: URL.createObjectURL(e.target.files[0])});
-                    } catch {
-
-                    }
-                }}/>
-            </label><br/>
-            <label title='Upload Token' htmlFor='uploadToken'>
-                <MdAddCircle />
-                <input type="file" id="uploadToken" style={{display:'none'}} onChange={(e) => {
-                    let arr = this.state.tokens;
-                    arr.push(URL.createObjectURL(e.target.files[0]));
-                    this.setState({tokens: arr});
-                }}/>
-            </label><br/>
-            <div title='Toggle Grid' id='drawGrid' onClick={() => {
-                    if(this.state.grid){
-                        this.setState({grid: false});
-                    } else {
-                        this.setState({grid: true});
-                    }
-            }}>
-            <MdGridOn />
-            </div>
-            <div title='Clear Room' id="clearRoom" onClick={() => {
-                this.setState({map: battlemap, tokens: []});
-            }}>
-            <FaTrashAlt />
-            </div>
-         </div>
+            <Rnd
+            default={{
+                x: 50,
+                y: 0,
+                width: 1000,
+            }}
+            onDragStart={this.preventDragHandler}
+            lockAspectRatio={true}
+            onDrag={e => {
+                e.stopImmediatePropagation();
+            }}
+            >
+                <img src={this.state.map} alt='map' style={{width: '100%'}}/>
+                {this.renderTokens()}
+            </Rnd>
         );
     }
 
+    //render the actions menu
+    renderActions(){
+        if(this.state.appear === true){
+            return (
+                <div className='popup DM'>
+       
+                   <label title='Upload Map' htmlFor='uploadMap'>
+                       <MdMap />
+                       <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
+                           try{
+                               this.setState({map: URL.createObjectURL(e.target.files[0])});
+                           } catch {
+       
+                           }
+                       }}/>
+                   </label><br/>
+       
+                   <label title='Upload Token' htmlFor='uploadToken'>
+                       <MdAddCircle />
+                       <input type="file" id="uploadToken" style={{display:'none'}} onChange={(e) => {
+                           let arr = this.state.tokens;
+                           arr.push(URL.createObjectURL(e.target.files[0]));
+                           this.setState({tokens: arr});
+                       }}/>
+                   </label><br/>
+                   
+                   <div title='Toggle Grid' id='drawGrid' onClick={() => {
+                           if(this.state.grid){
+                               this.setState({grid: false});
+                           } else {
+                               this.setState({grid: true});
+                           }
+                   }}>
+                       <MdGridOn />
+                   </div>
+       
+                   <div title='Clear Room' id="clearRoom" onClick={() => {
+                       this.setState({map: battlemap, tokens: []});
+                   }}>
+                   <FaTrashAlt />
+                   </div>
+                </div>
+               );
+        }
+        else {
+            return (<div></div>);
+        }
+        
+    }
+
+    //render the tokens
     renderTokens(){
         return this.state.tokens.map((token) =>
             <Rnd
@@ -91,32 +139,18 @@ class Table extends React.Component {
         );
     }
 
-    renderMap(){
-        return (
-            <Rnd
-            default={{
-                x: 50,
-                y: 0,
-                width: 1000,
-            }}
-            onDragStart={this.preventDragHandler}
-            lockAspectRatio={true}
-            onDrag={e => {
-                e.stopImmediatePropagation();
-            }}
-            >
-                <img src={this.state.battleMap} alt='map' style={{width: '100%'}}/>
-                {this.renderTokens()}
-            </Rnd>
-        );
+    //update the window dimensions
+    updateWindowDimensions() {
+        this.setState({ width: window.innerWidth, height: window.innerHeight });
     }
 
+    //render the grid
     renderGrid(){
         if(this.state.grid){
             const grid = [];
             let cellSize = 50;
-            let numRows = 5000/cellSize;
-            let numCols = 5000/cellSize;
+            let numRows = this.state.height/cellSize;
+            let numCols = this.state.width/cellSize;
             for (let row = 0; row < numRows; row++) {
             for (let col = 0; col < numCols; col++) {
                 const cellStyle = {
@@ -137,32 +171,40 @@ class Table extends React.Component {
             return null;
     }
 
+    //render the commands menu
     renderCommands(){
         return (
             <div className="over command">
-                <span className='alwaysClickable' onClick={this.handleClick()}>
+                <span className="alwaysClickable" onClick={() => {
+                    if(this.state.appear === true) {
+                        //make the actions menu disappear
+                        this.setState({appear: false});
+                    } else {
+                        this.setState({appear: true});
+                    }
+                }}>
                     <MdControlPoint />
                 </span>
-                {this.state.actions}
+                {this.renderActions()}
             </div>
         );
     }
 
+
     handleClick(){
-        if(this.state.appear === true) {
-            this.setState({appear: false, actions: this.renderActions()});
-        } else {
-            this.setState({appear: true, actions: ''});
-        }
+        
     }
 
+    //render the chat menu
     renderChat = () =>{
         return (
             <div className="over chat">
+
             </div>
         );
     }
 
+    //render the table
     render() {
         return (
             <div>
@@ -176,7 +218,6 @@ class Table extends React.Component {
         );
     }
 }
-
 
 function Home() {
     return (

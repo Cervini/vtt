@@ -118,10 +118,7 @@ body {
 }
 
 .token-hello:hover {
-    border-style: dashed;
-    border-width: 1px;
-    border-radius: 5px;
-    border-color:orangered;
+    border: dashed  5px orangered;
     display: inherit;
     visibility: inherit;
 }
