@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Rnd } from 'react-rnd';
-import { v4 as uuidv4 } from 'uuid';
+//import { v4 as uuidv4 } from 'uuid';
 import './index.css';
 import battlemap from './map.jpg';
 import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icons/md';
@@ -14,36 +14,37 @@ class Table extends React.Component {
     constructor(props){
         super(props);
         this.state = {
-            code: props,
+            code: props.code,
             map: battlemap,
             appear: false,
             tokens: [],
             tstyle: 'token-hello',
             grid: true,
             width: 0,
-            height: 0
+            height: 0,
+            chat: [],
             };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     }
         
     //when component mounts, add event listener for window resize
-    componentDidMount() {
+    componentDidMount = () =>{
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
     }
     
     //when component unmounts, remove event listener for window resize
-    componentWillUnmount() {
+    componentWillUnmount = () =>{
         window.removeEventListener('resize', this.updateWindowDimensions);
     }
     
     //prenvent default behaviour when dragging an image
-    preventDragHandler(e){
+    preventDragHandler = (e) =>{
         e.preventDefault(); 
     }
 
     //render the map
-    renderMap(){
+    renderMap = () =>{
         return (
             <Rnd
             default={{
@@ -64,7 +65,7 @@ class Table extends React.Component {
     }
 
     //render the actions menu
-    renderActions(){
+    renderActions = () =>{
         if(this.state.appear === true){
             return (
                 <div className='popup DM'>
@@ -75,7 +76,7 @@ class Table extends React.Component {
                            try{
                                this.setState({map: URL.createObjectURL(e.target.files[0])});
                            } catch {
-       
+                                console.log('Error');
                            }
                        }}/>
                    </label><br/>
@@ -113,7 +114,7 @@ class Table extends React.Component {
     }
 
     //render the tokens
-    renderTokens(){
+    renderTokens = () =>{
         //TODO: generate unique key for each token
         return this.state.tokens.map((token, index) =>
             <Rnd
@@ -141,30 +142,30 @@ class Table extends React.Component {
     }
 
     //update the window dimensions
-    updateWindowDimensions() {
+    updateWindowDimensions = () =>{
         this.setState({ width: window.innerWidth, height: window.innerHeight });
     }
 
     //render the grid
-    renderGrid(){
+    renderGrid = () =>{
         if(this.state.grid){
             const grid = [];
             let cellSize = 50;
             let numRows = this.state.height/cellSize;
             let numCols = this.state.width/cellSize;
             for (let row = 0; row < numRows; row++) {
-            for (let col = 0; col < numCols; col++) {
-                const cellStyle = {
-                top: row * cellSize,
-                left: col * cellSize,
-                width: cellSize,
-                height: cellSize,
-                border: '1px solid grey',
-                position: 'absolute',
-                boxSizing: 'border-box'
-                };
-                grid.push(<div style={cellStyle} key={`${row}-${col}`} />);
-            }
+                for (let col = 0; col < numCols; col++) {
+                    const cellStyle = {
+                    top: row * cellSize,
+                    left: col * cellSize,
+                    width: cellSize,
+                    height: cellSize,
+                    border: '1px solid grey',
+                    position: 'absolute',
+                    boxSizing: 'border-box'
+                    };
+                    grid.push(<div style={cellStyle} key={`${row}-${col}`} />);
+                }
             }
             return grid;
         }
@@ -173,7 +174,7 @@ class Table extends React.Component {
     }
 
     //render the commands menu
-    renderCommands(){
+    renderCommands = () =>{
         return (
             <div className="over command">
                 <span className="alwaysClickable" onClick={() => {
@@ -192,10 +193,10 @@ class Table extends React.Component {
     }
 
     //render the room code on top
-    renderCode(){
+    renderCode = () =>{
         return (
             <div className='over code'>
-                <span>Room code: {JSON.stringify(this.state.code)}</span>
+                <span>Room code: {this.state.code}</span>
             </div>
         );
     }
@@ -204,12 +205,31 @@ class Table extends React.Component {
     renderChat = () =>{
         return (
             <div className="over chat">
-                <form className="chatForm">
-                    <textarea className="chatText" placeholder="Write here..."></textarea>
+                <div className="chatHistory">
+                    {this.state.chat}
+                </div>
+                <form className="chatForm" onSubmit={this.sendMessage(msg)}>
+                    <textarea className="chatText" placeholder="Write here..." name='msg'></textarea>
                     <button className='send' type='submit'><MdSend /></button>
                 </form>
             </div>
         );
+    }
+
+    sendMessage = (msg) => {
+        fetch('../../chat', { 
+            method: 'POST',
+            body: {
+                code: this.state.code,
+                message: msg
+            }
+        }).then(response => response.json())
+                .then((response) => {
+                    if(response.ok){
+                        console.log('Code generated: ' + response.code);
+                        root.render(<Table code={response.code}/>);
+                    }
+            });
     }
 
     //render the table

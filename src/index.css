@@ -171,16 +171,26 @@ token-bye {
 }
 
 .chatText {
-    height: 100%;
     background-color: black;
     color: white;
     border: none;
-    width: 180px;
+    width: 200px;
+    height: 30px;
     resize: none;
     margin-bottom: 0px;
-    overflow: hidden;
+    overflow:hidden;
     outline: none;
     -webkit-box-shadow: none;
     -moz-box-shadow: none;
     box-shadow: none;
+}
+
+.send {
+    background:none;
+    border:none;
+    margin:0;
+    padding:0;
+    cursor: pointer;
+    color:rgb(106, 241, 169);
+    font-size: 30px;
 }
