@@ -114,6 +114,7 @@ class Table extends React.Component {
 
     //render the tokens
     renderTokens(){
+        //TODO: generate unique key for each token
         return this.state.tokens.map((token) =>
             <Rnd
             default={{
