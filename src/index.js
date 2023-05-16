@@ -1,9 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Rnd } from 'react-rnd';
+import { v4 as uuidv4 } from 'uuid';
 import './index.css';
 import battlemap from './map.jpg';
-import { MdMap, MdAddCircle, MdGridOn, MdControlPoint } from 'react-icons/md';
+import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icons/md';
 import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
 
@@ -108,21 +109,20 @@ class Table extends React.Component {
         }
         else {
             return (<div></div>);
-        }
-        
+        }    
     }
 
     //render the tokens
     renderTokens(){
         //TODO: generate unique key for each token
-        return this.state.tokens.map((token) =>
+        return this.state.tokens.map((token, index) =>
             <Rnd
             default={{
                 x: 30,
                 y: 30,
                 width: 50,
             }}
-            lockAspectRatio={true} 
+            lockAspectRatio={1}
             onDragStart={this.preventDragHandler}
             minHeight={30}
             minWidth={30}
@@ -131,11 +131,11 @@ class Table extends React.Component {
                 e.stopImmediatePropagation();
             }}
             >
-                <div className='token-X' onDoubleClick={() => {
+                <div className='token-X' key={index} onDoubleClick={() => {
                     this.setState({tstyle: 'token-bye'});
                 }}
                 ><TiDelete/></div>
-                <img src={token} key={(token)} alt="token" style={{height: '100%', width:'100%'}} />
+                <img src={token} key={index+1} alt="token" style={{height: '100%', width:'100%'}} />
             </Rnd>
         );
     }
@@ -191,16 +191,23 @@ class Table extends React.Component {
         );
     }
 
-
-    handleClick(){
-        
+    //render the room code on top
+    renderCode(){
+        return (
+            <div className='over code'>
+                <span>Room code: {JSON.stringify(this.state.code)}</span>
+            </div>
+        );
     }
 
     //render the chat menu
     renderChat = () =>{
         return (
             <div className="over chat">
-
+                <form className="chatForm">
+                    <textarea className="chatText" placeholder="Write here..."></textarea>
+                    <button className='send' type='submit'><MdSend /></button>
+                </form>
             </div>
         );
     }
@@ -215,6 +222,7 @@ class Table extends React.Component {
                 {this.renderMap()}
                 {this.renderCommands()}
                 {this.renderChat()}
+                {this.renderCode()}
             </div>
         );
     }
@@ -224,16 +232,18 @@ function Home() {
     return (
         <div className='container'>
             <div className='container window'>
-                    <button className='btn' type='submit' onClick={() => {
-                        fetch('../../create', { method: 'POST' })
-                        .then(response => response.json())
-                            .then((response) => {
-                                if(response.ok){
-                                    console.log('Code generated: ' + response.code);
-                                    root.render(<Table code={response.code}/>);
-                                }
-                        });
-                    }}>Create</button>
+                <button className='btn' type='submit' onClick={() => {
+                    fetch('../../create', { method: 'POST' })
+                    .then(response => response.json())
+                        .then((response) => {
+                            if(response.ok){
+                                console.log('Code generated: ' + response.code);
+                                root.render(<Table code={response.code}/>);
+                            }
+                    });
+                }}>
+                    Create
+                </button>
                 <button className='btn'>Join</button>
                 <form action='../../post' method='post'>
                     <button className='btn' type='submit'>Test connectivity</button>
