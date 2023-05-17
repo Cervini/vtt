@@ -22,6 +22,7 @@ class Table extends React.Component {
             grid: true,
             width: 0,
             height: 0,
+            message: '',
             chat: [],
             };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
@@ -201,35 +202,55 @@ class Table extends React.Component {
         );
     }
 
+    handleTextareaChange = (event) => {
+        this.setState({
+            message: event.target.value
+        });
+    }
+
     //render the chat menu
     renderChat = () =>{
         return (
             <div className="over chat">
                 <div className="chatHistory">
-                    {this.state.chat}
+                    {this.chatPrint()}
                 </div>
-                <form className="chatForm" onSubmit={this.sendMessage(msg)}>
-                    <textarea className="chatText" placeholder="Write here..." name='msg'></textarea>
+                <form className="chatForm" onSubmit={this.handleMessageSubmit}>
+                    <textarea className="chatText" placeholder="Write here..." name='message' onChange={this.handleTextareaChange}/>
                     <button className='send' type='submit'><MdSend /></button>
                 </form>
             </div>
         );
     }
 
+    //print the chat
+    chatPrint = () =>{
+        return this.state.chat.map((msg, index) =>
+            <div key={index}><span>{msg}</span><br/></div>
+        );
+    }
+
+    handleMessageSubmit = (event) => {
+        event.preventDefault();
+        this.sendMessage(this.state.message);
+    }
+
     sendMessage = (msg) => {
-        fetch('../../chat', { 
+        fetch('http://localhost:8080/chat', { 
             method: 'POST',
             body: {
-                code: this.state.code,
-                message: msg
+                code: JSON.stringify(this.state.code),
+                message: JSON.stringify(msg)
             }
         }).then(response => response.json())
-                .then((response) => {
-                    if(response.ok){
-                        console.log('Code generated: ' + response.code);
-                        root.render(<Table code={response.code}/>);
-                    }
-            });
+        .then((response) => {
+            if(response.ok){
+                this.setState({chat: response.message});
+            }
+        }).catch(error => {
+            // Handle any error that occurred during the request
+            console.error(error);
+        });
     }
 
     //render the table
@@ -253,7 +274,7 @@ function Home() {
         <div className='container'>
             <div className='container window'>
                 <button className='btn' type='submit' onClick={() => {
-                    fetch('../../create', { method: 'POST' })
+                    fetch('http://localhost:8080/create', { method: 'POST' })
                     .then(response => response.json())
                         .then((response) => {
                             if(response.ok){
@@ -265,7 +286,7 @@ function Home() {
                     Create
                 </button>
                 <button className='btn'>Join</button>
-                <form action='../../post' method='post'>
+                <form action='http://localhost:8080/post' method='post'>
                     <button className='btn' type='submit'>Test connectivity</button>
                 </form>
             </div>
