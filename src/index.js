@@ -202,6 +202,7 @@ class Table extends React.Component {
         );
     }
 
+    //update the current state.message
     handleTextareaChange = (event) => {
         this.setState({
             message: event.target.value
@@ -225,8 +226,8 @@ class Table extends React.Component {
 
     //print the chat
     chatPrint = () =>{
-        return this.state.chat.map((msg, index) =>
-            <div key={index}><span>{msg}</span><br/></div>
+        return this.state.chat?.map((msg) =>
+            <div><span>{msg}</span><br/></div>
         );
     }
 
@@ -236,16 +237,18 @@ class Table extends React.Component {
     }
 
     sendMessage = (msg) => {
+
         fetch('http://localhost:8080/chat', { 
             method: 'POST',
-            body: {
-                code: JSON.stringify(this.state.code),
-                message: JSON.stringify(msg)
-            }
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                code: this.state.code,
+                message: msg
+            })
         }).then(response => response.json())
         .then((response) => {
             if(response.ok){
-                this.setState({chat: response.message});
+                this.setState({chat: response.messages});
             }
         }).catch(error => {
             // Handle any error that occurred during the request
