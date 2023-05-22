@@ -4,9 +4,10 @@ import { Rnd } from 'react-rnd';
 //import { v4 as uuidv4 } from 'uuid';
 import './index.css';
 import battlemap from './map.jpg';
-import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icons/md';
+import { MdMap, MdAddCircle, MdGridOn, MdControlPoint } from 'react-icons/md';
 import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
+import Chat from './chat';
 
 class Table extends React.Component {
 
@@ -137,7 +138,7 @@ class Table extends React.Component {
                     this.setState({tstyle: 'token-bye'});
                 }}
                 ><TiDelete/></div>
-                <img src={token} key={index+1} alt="token" style={{height: '100%', width:'100%'}} />
+                <img src={token} key={index+200} alt="token" style={{height: '100%', width:'100%'}} />
             </Rnd>
         );
     }
@@ -202,60 +203,6 @@ class Table extends React.Component {
         );
     }
 
-    //update the current state.message
-    handleTextareaChange = (event) => {
-        this.setState({
-            message: event.target.value
-        });
-    }
-
-    //render the chat menu
-    renderChat = () =>{
-        return (
-            <div className="over chat">
-                <div className="chatHistory">
-                    {this.chatPrint()}
-                </div>
-                <form className="chatForm" onSubmit={this.handleMessageSubmit}>
-                    <textarea className="chatText" placeholder="Write here..." name='message' onChange={this.handleTextareaChange}/>
-                    <button className='send' type='submit'><MdSend /></button>
-                </form>
-            </div>
-        );
-    }
-
-    //print the chat
-    chatPrint = () =>{
-        return this.state.chat?.map((msg) =>
-            <div><span>{msg}</span><br/></div>
-        );
-    }
-
-    handleMessageSubmit = (event) => {
-        event.preventDefault();
-        this.sendMessage(this.state.message);
-    }
-
-    sendMessage = (msg) => {
-
-        fetch('http://localhost:8080/chat', { 
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                code: this.state.code,
-                message: msg
-            })
-        }).then(response => response.json())
-        .then((response) => {
-            if(response.ok){
-                this.setState({chat: response.messages});
-            }
-        }).catch(error => {
-            // Handle any error that occurred during the request
-            console.error(error);
-        });
-    }
-
     //render the table
     render() {
         return (
@@ -265,7 +212,7 @@ class Table extends React.Component {
                 </div>
                 {this.renderMap()}
                 {this.renderCommands()}
-                {this.renderChat()}
+                <Chat />
                 {this.renderCode()}
             </div>
         );
