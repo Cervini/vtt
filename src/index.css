@@ -200,8 +200,7 @@ token-bye {
 
 .chatHistory {
     padding: 10px;
-    overflow-y: auto;
-    overflow-x: auto;
+    overflow: hidden;
     border: none;
     width: 228px;
     background-color: black;

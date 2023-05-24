@@ -1,21 +1,29 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Rnd } from 'react-rnd';
-//import { v4 as uuidv4 } from 'uuid';
+import {io} from 'socket.io-client';
 import './index.css';
 import battlemap from './map.jpg';
-import { MdMap, MdAddCircle, MdGridOn, MdControlPoint } from 'react-icons/md';
+import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icons/md';
 import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
-import Chat from './chat';
 
 class Table extends React.Component {
 
     //constructor, required room 'code'
     constructor(props){
         super(props);
+        const socket = io('http://localhost:8080')
+        socket.on('connect', () => {
+            console.log(socket.id);
+        });
+        socket.on("code",(data) => (this.setState({code:data})));
+        socket.on('connect_error', ()=>{
+        setTimeout(()=>socket.connect(),5000)});
+        socket.on('disconnect',()=>console.log('disconnected'));
         this.state = {
-            code: props.code,
+            socket: socket,
+            code: '',
             map: battlemap,
             appear: false,
             tokens: [],
@@ -23,8 +31,8 @@ class Table extends React.Component {
             grid: true,
             width: 0,
             height: 0,
-            message: '',
-            chat: [],
+            messages: [],
+            newMessage: '',
             };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     }
@@ -153,6 +161,7 @@ class Table extends React.Component {
         if(this.state.grid){
             const grid = [];
             let cellSize = 50;
+            //get the height and width of the window to minimize the number of cells rendered
             let numRows = this.state.height/cellSize;
             let numCols = this.state.width/cellSize;
             for (let row = 0; row < numRows; row++) {
@@ -203,6 +212,52 @@ class Table extends React.Component {
         );
     }
 
+    setMessages = (messages) => {
+        this.setState({messages: messages});
+    }
+
+    setNewMessage = (newMessage) => {
+        this.setState({newMessage: newMessage});
+    }
+
+    handleInputChange = (event) => {
+        this.setNewMessage(event.target.value);
+    }
+
+    handleSendMessage = () => {
+        let temp = this.state.newMessage;
+        if (this.state.newMessage.trim() !== '') {
+            const updatedMessages = [...this.state.messages, this.state.newMessage];
+            this.setMessages(updatedMessages);
+            this.setNewMessage('');
+            this.state.socket.emit('message', {code: this.state.code, message: temp});
+        }
+    }
+
+    renderChat = () => {
+        return (
+            <div className="over chat">
+                  <div className="chatHistory">
+                      {this.state.messages.map((message, index) => (
+                          <div key={index} className="chatHistory">
+                              {message}
+                          </div>
+                      ))}
+                  </div>
+                  <div className="chatForm">
+                      <input
+                          className="chatText"
+                          type="text"
+                          value={this.state.newMessage}
+                          onChange={this.handleInputChange}
+                          placeholder="Write here..."
+                      />
+                      <button className="chatSend" onClick={this.handleSendMessage}><MdSend /></button>
+                  </div>
+            </div>
+        );
+    }
+
     //render the table
     render() {
         return (
@@ -212,7 +267,7 @@ class Table extends React.Component {
                 </div>
                 {this.renderMap()}
                 {this.renderCommands()}
-                <Chat />
+                {this.renderChat()}
                 {this.renderCode()}
             </div>
         );
@@ -224,6 +279,9 @@ function Home() {
         <div className='container'>
             <div className='container window'>
                 <button className='btn' type='submit' onClick={() => {
+                    root.render(<Table />);
+                    /*
+                    
                     fetch('http://localhost:8080/create', { method: 'POST' })
                     .then(response => response.json())
                         .then((response) => {
@@ -232,6 +290,8 @@ function Home() {
                                 root.render(<Table code={response.code}/>);
                             }
                     });
+                    
+                    */
                 }}>
                     Create
                 </button>
