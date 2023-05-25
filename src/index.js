@@ -13,14 +13,30 @@ class Table extends React.Component {
     //constructor, required room 'code'
     constructor(props){
         super(props);
-        const socket = io('http://localhost:8080')
-        socket.on('connect', () => {
-            console.log(socket.id);
-        });
-        socket.on("code",(data) => (this.setState({code:data})));
-        socket.on('connect_error', ()=>{
-        setTimeout(()=>socket.connect(),5000)});
-        socket.on('disconnect',()=>console.log('disconnected'));
+        let socket;
+        if(this.props.type === 'create'){
+            //room creation routine
+            socket = io('http://localhost:8080');
+            socket.on('connect', () => {
+                console.log(socket.id);
+                socket.emit('create', {});
+            });
+            socket.on("code",(data) => (this.setState({code:data})));
+            socket.on('connect_error', ()=>{
+            setTimeout(()=>socket.connect(),5000)});
+            socket.on('disconnect',()=>console.log('disconnected'));
+        }else{
+            //room joining routine
+            const socket = io('http://localhost:8080');
+            socket.on('connect', () => {
+                console.log(socket.id);
+                socket.emit('join', {code: this.props.code});
+            });
+            socket.on("code",(data) => (this.setState({code:data})));
+            socket.on('connect_error', ()=>{
+            setTimeout(()=>socket.connect(),5000)});
+            socket.on('disconnect',()=>console.log('disconnected'));
+        }
         this.state = {
             socket: socket,
             code: '',
@@ -274,31 +290,41 @@ class Table extends React.Component {
     }
 }
 
+//====================================================================================================
+
+function Join() {
+    let roomCode = '';
+
+    return (
+        <div className='container'>
+            <div className='container window'>
+                <input type='text' placeholder='Room Code' className='input' onChange={() => {
+                    roomCode = document.querySelector('.input').value;
+                }}/>
+                <button className='btn' type='submit' onClick={() => {
+                    if(roomCode !== ''){
+                        //render the table
+                        root.render(<Table type='join' code={roomCode}/>);
+                    }
+                }}>Join</button>
+            </div>
+        </div>
+    );
+}
+
 function Home() {
     return (
         <div className='container'>
             <div className='container window'>
                 <button className='btn' type='submit' onClick={() => {
-                    root.render(<Table />);
-                    /*
-                    
-                    fetch('http://localhost:8080/create', { method: 'POST' })
-                    .then(response => response.json())
-                        .then((response) => {
-                            if(response.ok){
-                                console.log('Code generated: ' + response.code);
-                                root.render(<Table code={response.code}/>);
-                            }
-                    });
-                    
-                    */
+                    root.render(<Table type='create'/>);
                 }}>
                     Create
                 </button>
-                <button className='btn'>Join</button>
-                <form action='http://localhost:8080/post' method='post'>
-                    <button className='btn' type='submit'>Test connectivity</button>
-                </form>
+                <button className='btn' type='submit' onClick={() => {
+                    //render the join window
+                    root.render(<Join />);
+                }}>Join</button>
             </div>
         </div>
     );
