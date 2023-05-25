@@ -10,10 +10,10 @@ import { FaTrashAlt } from 'react-icons/fa';
 
 class Table extends React.Component {
 
-    //constructor, required room 'code'
+    //constructor required room 'code'
     constructor(props){
         super(props);
-        let socket;
+        let socket, username;
         if(this.props.type === 'create'){
             //room creation routine
             socket = io('http://localhost:8080');
@@ -21,22 +21,34 @@ class Table extends React.Component {
                 console.log(socket.id);
                 socket.emit('create', {});
             });
-            socket.on("code",(data) => (this.setState({code:data})));
-            socket.on('connect_error', ()=>{
-            setTimeout(()=>socket.connect(),5000)});
-            socket.on('disconnect',()=>console.log('disconnected'));
+            username = 'DM';
         }else{
             //room joining routine
-            const socket = io('http://localhost:8080');
+            socket = io('http://localhost:8080');
             socket.on('connect', () => {
                 console.log(socket.id);
                 socket.emit('join', {code: this.props.code});
             });
-            socket.on("code",(data) => (this.setState({code:data})));
-            socket.on('connect_error', ()=>{
-            setTimeout(()=>socket.connect(),5000)});
-            socket.on('disconnect',()=>console.log('disconnected'));
+            username = 'Adventurer';
         }
+        //socket event listeners
+        socket.on('message', (data) => {
+            const tMessage = {
+                username: data.username,
+                message: data.message
+            }
+            const updatedMessages = [...this.state.messages, tMessage];
+            this.setMessages(updatedMessages);
+        });
+        //set room code when received from server
+        socket.on("code",(data) => (this.setState({code:data})));
+        //error handling
+        socket.on('connect_error', ()=>{
+            setTimeout(()=>socket.connect(),5000)
+        });
+        //print message to console when disconnected
+        socket.on('disconnect',()=>console.log('disconnected'));
+        
         this.state = {
             socket: socket,
             code: '',
@@ -45,6 +57,7 @@ class Table extends React.Component {
             tokens: [],
             tstyle: 'token-hello',
             grid: true,
+            username: username,
             width: 0,
             height: 0,
             messages: [],
@@ -243,10 +256,12 @@ class Table extends React.Component {
     handleSendMessage = () => {
         let temp = this.state.newMessage;
         if (this.state.newMessage.trim() !== '') {
-            const updatedMessages = [...this.state.messages, this.state.newMessage];
-            this.setMessages(updatedMessages);
             this.setNewMessage('');
-            this.state.socket.emit('message', {code: this.state.code, message: temp});
+            this.state.socket.emit('message', {
+                code: this.state.code,
+                username: this.state.username,
+                message: temp,
+            });
         }
     }
 
@@ -256,7 +271,7 @@ class Table extends React.Component {
                   <div className="chatHistory">
                       {this.state.messages.map((message, index) => (
                           <div key={index} className="chatHistory">
-                              {message}
+                               {message.username}: {message.message}
                           </div>
                       ))}
                   </div>

@@ -22,7 +22,7 @@ app.use(cors());
 
 const rooms = [];
 
-function createChat(code){
+function createRoom(code){
   const room = {
     code: code,
     users: [],
@@ -48,51 +48,60 @@ function checkCode(code){
   return false;
 }
 
-function broadcastRoom(){}
+//broadcast message to all users in room
+function broadcastRoom(code, message){
+  const room = getRoom(code);
+  for (let i = 0; i < room.users.length; i++) {
+    console.log("sending message to: " + room.users[i].id);
+    room.users[i].emit("message", message);
+  }
+}
 
 io.on("connection",(socket)=>{
-    console.log("client connected: ", socket.id);
 
-    socket.on("create",()=>{
-      let code;
-      //generate code
-      do{
-        //repeat if code already exists
-        code = Math.floor(Math.random() * 1000000);
-        console.log("Generated code " + code);
-      }while(checkCode(code));
-      //create room and add it to the rooms array
-      rooms.push(createChat(code));
-      getRoom(code).users.push(socket);
+  console.log("client connected: ", socket.id);
+
+  socket.on("create",()=>{
+    let code;
+    //generate code
+    do{
+      //repeat if code already exists
+      code = Math.floor(Math.random() * 1000000);
+      console.log("Generated code " + code);
+    }while(checkCode(code));
+    //create room and add it to the rooms array
+    rooms.push(createRoom(code));
+    getRoom(code).users.push(socket);
+    //send code to client
+    socket.emit("code",code);
+  });
+
+  socket.on("join",(data)=>{
+    console.log("client trying to join in room: ", data.code);
+    //check if room exists
+    if(checkCode(data.code)){
+      //add user to room
+      getRoom(data.code).users.push(socket);
       //send code to client
-      socket.emit("code",code);
-    });
+      socket.emit("code",data.code);
+    }
+    else{
+      //send error to client
+      socket.emit("error","Room does not exist");
+    }
+  });
 
-    socket.on("join",(data)=>{
-      console.log("client trying to join in room: ", data.code);
-      //check if room exists
-      if(checkCode(data.code)){
-        //add user to room
-        getRoom(data.code).users.push(socket);
-        //send code to client
-        socket.emit("code",data.code);
-      }
-      else{
-        //send error to client
-        socket.emit("error","Room does not exist");
-      }
-    });
+  socket.join(socket.id+"-room");
 
-    socket.join(socket.id+"-room");
+  socket.on("disconnect",(reason)=>{
+      console.log(reason);
+  });
 
-    socket.on("disconnect",(reason)=>{
-        console.log(reason);
-    });
-
-    socket.on("message",(data)=>{
-        console.log("message recieved: " + data.message);
-        io.emit("message",data);
-    });
+  socket.on("message",(data)=>{
+      console.log("message recieved: " + data.message);
+      broadcastRoom(data.code, data);
+  });
+  
 })
 
 io.on('message', (data) => {
