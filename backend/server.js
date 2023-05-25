@@ -14,8 +14,6 @@ const io = socketIo(server,{
   }
 });
 
-//HMqFTR2ezx4fEV5K mongoDB pass
-
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
 app.use(cors());
@@ -101,7 +99,7 @@ io.on("connection",(socket)=>{
       console.log("message recieved: " + data.message);
       broadcastRoom(data.code, data);
   });
-  
+
 })
 
 io.on('message', (data) => {

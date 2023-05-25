@@ -7,13 +7,14 @@ import battlemap from './map.jpg';
 import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icons/md';
 import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
+import { RiUserSettingsLine } from 'react-icons/ri';
 
 class Table extends React.Component {
 
     //constructor required room 'code'
     constructor(props){
         super(props);
-        let socket, username;
+        let socket, username, role;
         if(this.props.type === 'create'){
             //room creation routine
             socket = io('http://localhost:8080');
@@ -22,6 +23,7 @@ class Table extends React.Component {
                 socket.emit('create', {});
             });
             username = 'DM';
+            role = 'DM';
         }else{
             //room joining routine
             socket = io('http://localhost:8080');
@@ -30,6 +32,7 @@ class Table extends React.Component {
                 socket.emit('join', {code: this.props.code});
             });
             username = 'Adventurer';
+            role = 'Adventurer';
         }
         //socket event listeners
         socket.on('message', (data) => {
@@ -51,9 +54,11 @@ class Table extends React.Component {
         
         this.state = {
             socket: socket,
+            role: role,
             code: '',
             map: battlemap,
             appear: false,
+            usermenu: false,
             tokens: [],
             tstyle: 'token-hello',
             grid: true,
@@ -103,49 +108,71 @@ class Table extends React.Component {
         );
     }
 
+    toggleUserMenu = () =>{
+        if(this.state.usermenu){
+            this.setState({usermenu: false});
+        } else {
+            this.setState({usermenu: true});
+        }
+    }
+
     //render the actions menu
     renderActions = () =>{
         if(this.state.appear === true){
-            return (
+            if(this.state.role === 'DM'){
+                return (
+                    <div className='popup DM'>
+        
+                    <label title='Upload Map' htmlFor='uploadMap'>
+                        <MdMap />
+                        <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
+                            try{
+                                this.setState({map: URL.createObjectURL(e.target.files[0])});
+                            } catch {
+                                    console.log('Error');
+                            }
+                        }}/>
+                    </label><br/>
+        
+                    <label title='Upload Token' htmlFor='uploadToken'>
+                        <MdAddCircle />
+                        <input type="file" id="uploadToken" style={{display:'none'}} onChange={(e) => {
+                            let arr = this.state.tokens;
+                            arr.push(URL.createObjectURL(e.target.files[0]));
+                            this.setState({tokens: arr});
+                        }}/>
+                    </label><br/>
+                    
+                    <div title='Toggle Grid' id='drawGrid' onClick={() => {
+                            if(this.state.grid){
+                                this.setState({grid: false});
+                            } else {
+                                this.setState({grid: true});
+                            }
+                    }}>
+                        <MdGridOn />
+                    </div>
+        
+                    <div title='Clear Room' id="clearRoom" onClick={() => {
+                        this.setState({map: battlemap, tokens: []});
+                    }}>
+                        <FaTrashAlt />
+                    </div>
+
+                    <div title='User settings' id="settings" onClick={() => {this.toggleUserMenu()} }>
+                        <RiUserSettingsLine />
+                    </div>
+                    </div>
+                );
+            }else{
+                return (
                 <div className='popup DM'>
-       
-                   <label title='Upload Map' htmlFor='uploadMap'>
-                       <MdMap />
-                       <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
-                           try{
-                               this.setState({map: URL.createObjectURL(e.target.files[0])});
-                           } catch {
-                                console.log('Error');
-                           }
-                       }}/>
-                   </label><br/>
-       
-                   <label title='Upload Token' htmlFor='uploadToken'>
-                       <MdAddCircle />
-                       <input type="file" id="uploadToken" style={{display:'none'}} onChange={(e) => {
-                           let arr = this.state.tokens;
-                           arr.push(URL.createObjectURL(e.target.files[0]));
-                           this.setState({tokens: arr});
-                       }}/>
-                   </label><br/>
-                   
-                   <div title='Toggle Grid' id='drawGrid' onClick={() => {
-                           if(this.state.grid){
-                               this.setState({grid: false});
-                           } else {
-                               this.setState({grid: true});
-                           }
-                   }}>
-                       <MdGridOn />
-                   </div>
-       
-                   <div title='Clear Room' id="clearRoom" onClick={() => {
-                       this.setState({map: battlemap, tokens: []});
-                   }}>
-                   <FaTrashAlt />
-                   </div>
+                    <div title='User settings' id="settings" onClick={() => {this.toggleUserMenu()} }>
+                        <RiUserSettingsLine />
+                    </div>
                 </div>
-               );
+                );
+            }
         }
         else {
             return (<div></div>);
@@ -289,10 +316,28 @@ class Table extends React.Component {
         );
     }
 
+    renderUserMenu = () => {
+        let username = '';
+        if(this.state.usermenu){
+            return (
+                <div className='over container window'> 
+                    <input type='text' placeholder='Write username' className='input' onChange={() => {
+                        username = document.querySelector('.input').value;
+                    }}/>
+                    <button className='btn' type='submit' onClick={() => {
+                        this.setState({username: username,
+                            usermenu: false});
+
+                    }}>Change Username</button>
+                </div>
+            );
+        }
+    }
+
     //render the table
     render() {
         return (
-            <div>
+            <div className='container'>
                 <div className='for-grid'>
                     {this.renderGrid()}
                 </div>
@@ -300,6 +345,7 @@ class Table extends React.Component {
                 {this.renderCommands()}
                 {this.renderChat()}
                 {this.renderCode()}
+                {this.renderUserMenu()}
             </div>
         );
     }
