@@ -1,18 +1,17 @@
 const express = require("express");
 
-const socketIo = require("socket.io");
 const http = require("http");
 const PORT = process.env.PORT || 8080;
 
 const app = express();
 const server = http.createServer(app);
-const cors = require("cors");
-
-const io = socketIo(server,{
+const socketIo = require("socket.io")(server,{
   cors: {
     origin: "http://localhost:3000",
-  }
+  },
+  maxHttpBufferSize: 1e8
 });
+const cors = require("cors");
 
 app.use(express.urlencoded({extended: true}));
 app.use(express.json());
@@ -20,11 +19,12 @@ app.use(cors());
 
 const rooms = [];
 
-function createRoom(code){
+function createRoom(code, socket){
   const room = {
     code: code,
     users: [],
   }
+  room.users.push(socket);
   return room;
 }
 
@@ -46,16 +46,20 @@ function checkCode(code){
   return false;
 }
 
-//broadcast message to all users in room
-function broadcastRoom(code, message){
+function broadcast(code, data, type){
   const room = getRoom(code);
-  for (let i = 0; i < room.users.length; i++) {
-    console.log("sending message to: " + room.users[i].id);
-    room.users[i].emit("message", message);
+  try {
+    console.log(room.users.length + " users in room " + code);
+    for (let i = 0; i < room.users.length; i++) {
+      room.users[i].emit(type, data);
+    }
+  } catch(e) {
+    console.log(e);
   }
+  
 }
 
-io.on("connection",(socket)=>{
+socketIo.on("connection",(socket)=>{
 
   console.log("client connected: ", socket.id);
 
@@ -68,14 +72,12 @@ io.on("connection",(socket)=>{
       console.log("Generated code " + code);
     }while(checkCode(code));
     //create room and add it to the rooms array
-    rooms.push(createRoom(code));
-    getRoom(code).users.push(socket);
+    rooms.push(createRoom(code, socket));
     //send code to client
     socket.emit("code",code);
   });
 
   socket.on("join",(data)=>{
-    console.log("client trying to join in room: ", data.code);
     //check if room exists
     if(checkCode(data.code)){
       //add user to room
@@ -92,19 +94,19 @@ io.on("connection",(socket)=>{
   socket.join(socket.id+"-room");
 
   socket.on("disconnect",(reason)=>{
-      console.log(reason);
+    console.log(reason);
   });
 
   socket.on("message",(data)=>{
-      console.log("message recieved: " + data.message);
-      broadcastRoom(data.code, data);
+    broadcast(data.code, data, "message");
+  });
+
+  socket.on("map",(data)=>{
+    console.log("map changed: " + data);
+    broadcast(data.code, data.map, "map");
   });
 
 })
-
-io.on('message', (data) => {
-  console.log("message recieved: " + data.message);
-});
 
 server.listen(PORT, err=> {
   if(err)

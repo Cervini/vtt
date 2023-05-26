@@ -51,6 +51,11 @@ class Table extends React.Component {
         });
         //print message to console when disconnected
         socket.on('disconnect',()=>console.log('disconnected'));
+        //set state
+        socket.on('map', (data) => {
+            console.log('map changing');
+            this.setState({map: data.map});
+        });
         
         this.state = {
             socket: socket,
@@ -67,19 +72,30 @@ class Table extends React.Component {
             height: 0,
             messages: [],
             newMessage: '',
+            //t: 1000,
+            //interval: null,
             };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-    }
         
+    }
+    
+
     //when component mounts, add event listener for window resize
     componentDidMount = () =>{
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
+        /*
+        this.setState({interval: setInterval(() => {
+            //console.log('Logs every second');
+        }, this.state.t)});
+        */
+
     }
     
     //when component unmounts, remove event listener for window resize
     componentWillUnmount = () =>{
         window.removeEventListener('resize', this.updateWindowDimensions);
+        //clearInterval(this.state.interval);
     }
     
     //prenvent default behaviour when dragging an image
@@ -128,8 +144,14 @@ class Table extends React.Component {
                         <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
                             try{
                                 this.setState({map: URL.createObjectURL(e.target.files[0])});
-                            } catch {
-                                    console.log('Error');
+                                //send map to server
+                                console.log('sending map');
+                                this.state.socket.emit('map', {
+                                    map: this.state.map,
+                                    code: this.state.code
+                                });
+                            } catch (err) {
+                                console.log(err);
                             }
                         }}/>
                     </label><br/>
