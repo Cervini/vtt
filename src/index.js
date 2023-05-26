@@ -8,6 +8,7 @@ import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icon
 import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
+import isBlob from 'is-blob';
 
 class Table extends React.Component {
 
@@ -47,14 +48,16 @@ class Table extends React.Component {
         socket.on("code",(data) => (this.setState({code:data})));
         //error handling
         socket.on('connect_error', ()=>{
-            setTimeout(()=>socket.connect(),5000)
+            setTimeout(()=>socket.connect(),5000);
         });
         //print message to console when disconnected
         socket.on('disconnect',()=>console.log('disconnected'));
         //set state
         socket.on('map', (data) => {
-            console.log('map changing');
-            this.setState({map: data.map});
+            console.log('map changing: ' + data.file);
+            const blobby = new Blob(data.file, {type: 'image/jpeg'});
+            console.log(blobby);
+            this.setState({map: URL.createObjectURL(blobby)});
         });
         
         this.state = {
@@ -76,7 +79,6 @@ class Table extends React.Component {
             //interval: null,
             };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-        
     }
     
 
@@ -143,13 +145,49 @@ class Table extends React.Component {
                         <MdMap />
                         <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
                             try{
-                                this.setState({map: URL.createObjectURL(e.target.files[0])});
+                                //this.setState({map: URL.createObjectURL(e.target.files[0])});
                                 //send map to server
-                                console.log('sending map');
+
+                                const file = e.target.files[0];
+                                this.setState({ map: URL.createObjectURL(file) });
+
+                                // Create a FileReader to read the file as binary
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                    const fileData = {
+                                        code: this.state.code,
+                                        file: event.target.result,
+                                    }
+                                    console.log('sending map');
+                                    // Emit the file data to the server through the socket
+                                    this.state.socket.emit('map', fileData);
+                                };
+                                reader.readAsBinaryString(file);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                /*
                                 this.state.socket.emit('map', {
-                                    map: this.state.map,
+                                    url: e.target.files[0],
                                     code: this.state.code
                                 });
+                                */
                             } catch (err) {
                                 console.log(err);
                             }

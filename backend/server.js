@@ -46,12 +46,13 @@ function checkCode(code){
   return false;
 }
 
+//broadcast to all users in room using 'type' emit
 function broadcast(code, data, type){
   const room = getRoom(code);
   try {
-    console.log(room.users.length + " users in room " + code);
     for (let i = 0; i < room.users.length; i++) {
       room.users[i].emit(type, data);
+      console.log("broadcasted to " + room.users[i].id);
     }
   } catch(e) {
     console.log(e);
@@ -102,8 +103,8 @@ socketIo.on("connection",(socket)=>{
   });
 
   socket.on("map",(data)=>{
-    console.log("map changed: " + data);
-    broadcast(data.code, data.map, "map");
+    console.log("map: " + toString(data.file));
+    broadcast(data.code, data.file, "map");
   });
 
 })
