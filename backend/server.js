@@ -50,7 +50,6 @@ function broadcast(code, data, type){
   try {
     for (let i = 0; i < room.users.length; i++) {
       room.users[i].emit(type, data);
-      console.log("sent " + type + " to " + room.users[i].id);
     }
   } catch(e) {
     console.log(e);
@@ -83,6 +82,12 @@ socketIo.on("connection",(socket)=>{
       getRoom(data.code).users.push(socket);
       //send code to client
       socket.emit("code",data.code);
+      const announcement = {
+        message: "A new adventurer joined the party :",
+        usename: "",
+        cmd: true
+      }
+      broadcast(data.code, announcement, "message");
     }
     else{
       //send error to client

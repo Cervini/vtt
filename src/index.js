@@ -84,7 +84,6 @@ class Table extends React.Component {
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     }
     
-
     //when component mounts, add event listener for window resize
     componentDidMount = () =>{
         this.updateWindowDimensions();
@@ -143,16 +142,13 @@ class Table extends React.Component {
             if(this.state.role === 'DM'){
                 return (
                     <div className='popup DM'>
-        
+
                     <label title='Upload Map' htmlFor='uploadMap'>
                         <MdMap />
                         <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
                             try{
-                                //this.setState({map: URL.createObjectURL(e.target.files[0])});
-                                //send map to server
-                                
+                                //create blob from file
                                 const image = new Blob([e.target.files[0]], {type: 'image/jpeg'});
-                                console.log(image);
                                 this.setState({ map: URL.createObjectURL(image) });
                                 //build file data object
                                 const fileData = {
@@ -161,13 +157,12 @@ class Table extends React.Component {
                                 }
                                 // Emit the file data to the server through the socket
                                 this.state.socket.emit('map', fileData);
-
                             } catch (err) {
                                 console.log(err);
                             }
                         }}/>
                     </label><br/>
-        
+
                     <label title='Upload Token' htmlFor='uploadToken'>
                         <MdAddCircle />
                         <input type="file" id="uploadToken" style={{display:'none'}} onChange={(e) => {
@@ -176,7 +171,7 @@ class Table extends React.Component {
                             this.setState({tokens: arr});
                         }}/>
                     </label><br/>
-                    
+
                     <div title='Toggle Grid' id='drawGrid' onClick={() => {
                             if(this.state.grid){
                                 this.setState({grid: false});
@@ -186,7 +181,7 @@ class Table extends React.Component {
                     }}>
                         <MdGridOn />
                     </div>
-        
+
                     <div title='Clear Room' id="clearRoom" onClick={() => {
                         this.setState({map: battlemap, tokens: []});
                     }}>
@@ -322,6 +317,7 @@ class Table extends React.Component {
                 code: this.state.code,
                 username: this.state.username,
                 message: temp,
+                cmd: false
             });
         }
     }
