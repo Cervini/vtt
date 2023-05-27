@@ -8,7 +8,6 @@ import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icon
 import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
-import isBlob from 'is-blob';
 
 class Table extends React.Component {
 
@@ -35,6 +34,7 @@ class Table extends React.Component {
             username = 'Adventurer';
             role = 'Adventurer';
         }
+
         //socket event listeners
         socket.on('message', (data) => {
             const tMessage = {
@@ -44,18 +44,21 @@ class Table extends React.Component {
             const updatedMessages = [...this.state.messages, tMessage];
             this.setMessages(updatedMessages);
         });
+
         //set room code when received from server
-        socket.on("code",(data) => (this.setState({code:data})));
+        socket.on('code',(data) => (this.setState({code:data})));
+
         //error handling
         socket.on('connect_error', ()=>{
             setTimeout(()=>socket.connect(),5000);
         });
+
         //print message to console when disconnected
         socket.on('disconnect',()=>console.log('disconnected'));
+
         //set state
         socket.on('map', (data) => {
-            console.log('map changing: ' + data.file);
-            const blobby = new Blob(data.file, {type: 'image/jpeg'});
+            const blobby = new Blob([data], {type: 'image/jpeg'});
             console.log(blobby);
             this.setState({map: URL.createObjectURL(blobby)});
         });
@@ -147,47 +150,18 @@ class Table extends React.Component {
                             try{
                                 //this.setState({map: URL.createObjectURL(e.target.files[0])});
                                 //send map to server
+                                
+                                const image = new Blob([e.target.files[0]], {type: 'image/jpeg'});
+                                console.log(image);
+                                this.setState({ map: URL.createObjectURL(image) });
+                                //build file data object
+                                const fileData = {
+                                    code: this.state.code,
+                                    file: image,
+                                }
+                                // Emit the file data to the server through the socket
+                                this.state.socket.emit('map', fileData);
 
-                                const file = e.target.files[0];
-                                this.setState({ map: URL.createObjectURL(file) });
-
-                                // Create a FileReader to read the file as binary
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                    const fileData = {
-                                        code: this.state.code,
-                                        file: event.target.result,
-                                    }
-                                    console.log('sending map');
-                                    // Emit the file data to the server through the socket
-                                    this.state.socket.emit('map', fileData);
-                                };
-                                reader.readAsBinaryString(file);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                /*
-                                this.state.socket.emit('map', {
-                                    url: e.target.files[0],
-                                    code: this.state.code
-                                });
-                                */
                             } catch (err) {
                                 console.log(err);
                             }

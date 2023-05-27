@@ -1,8 +1,6 @@
 const express = require("express");
-
 const http = require("http");
 const PORT = process.env.PORT || 8080;
-
 const app = express();
 const server = http.createServer(app);
 const socketIo = require("socket.io")(server,{
@@ -52,7 +50,7 @@ function broadcast(code, data, type){
   try {
     for (let i = 0; i < room.users.length; i++) {
       room.users[i].emit(type, data);
-      console.log("broadcasted to " + room.users[i].id);
+      console.log("sent " + type + " to " + room.users[i].id);
     }
   } catch(e) {
     console.log(e);
@@ -102,9 +100,15 @@ socketIo.on("connection",(socket)=>{
     broadcast(data.code, data, "message");
   });
 
+  /*
   socket.on("map",(data)=>{
     console.log("map: " + toString(data.file));
     broadcast(data.code, data.file, "map");
+  });*/
+
+  socket.on("map", (data) => {
+    const imageData = data.file.buffer;
+    broadcast(data.code, imageData, "map");
   });
 
 })
