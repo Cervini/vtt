@@ -148,15 +148,13 @@ socketIo.on("connection",(socket)=>{
     }
   });
 
-  /*
-  socket.on("map",(data)=>{
-    console.log("map: " + toString(data.file));
-    broadcast(data.code, data.file, "map");
-  });*/
-
   socket.on("map", (data) => {
     const imageData = data.file;
     broadcast(data.code, imageData, "map");
+  });
+
+  socket.on("update", (data) => {
+    broadcast(data.code, data, "update");
   });
 
 })

@@ -9,5 +9,6 @@
  - [x] Dice roll chat commands
  - [ ] Updated state on join
  - [ ] Synched token
- - [ ] Synched view
+ - [x] Synched map view
+ - [ ] Synched token view
  - [ ] Adjustable grid size

@@ -5,7 +5,6 @@ import {io} from 'socket.io-client';
 import './index.css';
 import battlemap from './map.jpg';
 import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icons/md';
-//import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
 
@@ -24,7 +23,7 @@ class Table extends React.Component {
             });
             username = 'DM';
             role = 'DM';
-        }else{
+        } else {
             //room joining routine
             socket = io('http://localhost:8080');
             socket.on('connect', () => {
@@ -74,6 +73,10 @@ class Table extends React.Component {
             }
         });
 
+        socket.on('update', (data) => {
+            this.updatePosition(data.x, data.y, data.id);
+        });
+
         //error handling
         socket.on('connect_error', ()=>{
             setTimeout(()=>socket.connect(),5000);
@@ -88,6 +91,8 @@ class Table extends React.Component {
             console.log(blobby);
             this.setState({map: URL.createObjectURL(blobby)});
         });
+
+        this.mapref = React.createRef(null);
         
         this.state = {
             socket: socket,
@@ -119,6 +124,15 @@ class Table extends React.Component {
         window.removeEventListener('resize', this.updateWindowDimensions);
         //clearInterval(this.state.interval);
     }
+
+    updatePosition = (x, y, id) => {
+        const element = document.getElementById(id);
+        console.log(element);
+        if (element) {
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+        }
+    };
     
     //prenvent default behaviour when dragging an image
     preventDragHandler = (e) =>{
@@ -140,8 +154,17 @@ class Table extends React.Component {
                 e.stopImmediatePropagation();
             }}
             key={'rnd-map'}
+            ref={this.mapref}
+            id={'rnd-map'}
             onDragStop={(e, d) => {
                 console.log(d.x, d.y);
+                const update = {
+                    x: d.x,
+                    y: d.y,
+                    id: 'rnd-map',
+                    code: this.state.code,
+                }
+                this.state.socket.emit('update', update);
             }}
             >
                 <img src={this.state.map} key={'map'} alt='map' style={{width: '100%'}}/>
@@ -248,7 +271,6 @@ class Table extends React.Component {
 
     //render the tokens
     renderTokens = () =>{
-        //TODO: generate unique key for each token
         return this.state.tokens.map((token) =>
             <Rnd
             default={{
