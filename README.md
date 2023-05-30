@@ -6,7 +6,7 @@
 
 ## Task List
 
- - [ ] Dice roll chat commands
+ - [x] Dice roll chat commands
  - [ ] Updated state on join
  - [ ] Synched token
  - [ ] Synched view

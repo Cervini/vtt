@@ -5,7 +5,7 @@ import {io} from 'socket.io-client';
 import './index.css';
 import battlemap from './map.jpg';
 import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icons/md';
-import { TiDelete } from 'react-icons/ti';
+//import { TiDelete } from 'react-icons/ti';
 import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
 
@@ -32,7 +32,7 @@ class Table extends React.Component {
                 socket.emit('join', {code: this.props.code});
             });
             username = 'Adventurer';
-            role = 'Adventurer';
+            role = 'Player';
         }
 
         //socket event listeners
@@ -47,6 +47,32 @@ class Table extends React.Component {
 
         //set room code when received from server
         socket.on('code',(data) => (this.setState({code:data})));
+
+        socket.on('command', (data) => {
+            switch(data.command){
+                case 'share': {
+                    console.log('share command received');
+                    let image;
+                    //find the map in the files array
+                    for(let i = 0; i < this.state.files.length; i++){
+                        if(this.state.files[i].type === 'map'){
+                            image = this.state.files[i].file;
+                        }
+                    }
+                    //build file data object
+                    const fileData = {
+                        code: this.state.code,
+                        file: image,
+                    }
+                    // Emit the file data to the server through the socket
+                    this.state.socket.emit('map', fileData);
+                    break;
+                }
+                default: {
+                    console.log('Unknown command');
+                }
+            }
+        });
 
         //error handling
         socket.on('connect_error', ()=>{
@@ -71,15 +97,13 @@ class Table extends React.Component {
             appear: false,
             usermenu: false,
             tokens: [],
-            tstyle: 'token-hello',
             grid: true,
             username: username,
             width: 0,
             height: 0,
             messages: [],
             newMessage: '',
-            //t: 1000,
-            //interval: null,
+            files: [],
             };
         this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     }
@@ -88,12 +112,6 @@ class Table extends React.Component {
     componentDidMount = () =>{
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
-        /*
-        this.setState({interval: setInterval(() => {
-            //console.log('Logs every second');
-        }, this.state.t)});
-        */
-
     }
     
     //when component unmounts, remove event listener for window resize
@@ -121,8 +139,12 @@ class Table extends React.Component {
             onDrag={e => {
                 e.stopImmediatePropagation();
             }}
+            key={'rnd-map'}
+            onDragStop={(e, d) => {
+                console.log(d.x, d.y);
+            }}
             >
-                <img src={this.state.map} alt='map' style={{width: '100%'}}/>
+                <img src={this.state.map} key={'map'} alt='map' style={{width: '100%'}}/>
                 {this.renderTokens()}
             </Rnd>
         );
@@ -147,6 +169,17 @@ class Table extends React.Component {
                         <MdMap />
                         <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
                             try{
+
+                                /*
+                                //add file to array of files
+                                const element = {
+                                    //type of the file is map
+                                    type: 'map',
+                                    file: e.target.files[0],
+                                }
+                                this.state.files.push(element);
+                                */
+
                                 //create blob from file
                                 const image = new Blob([e.target.files[0]], {type: 'image/jpeg'});
                                 this.setState({ map: URL.createObjectURL(image) });
@@ -167,7 +200,12 @@ class Table extends React.Component {
                         <MdAddCircle />
                         <input type="file" id="uploadToken" style={{display:'none'}} onChange={(e) => {
                             let arr = this.state.tokens;
-                            arr.push(URL.createObjectURL(e.target.files[0]));
+                            const element = {
+                                token: URL.createObjectURL(e.target.files[0]),
+                                key: arr.length,
+                            }
+
+                            arr.push(element);
                             this.setState({tokens: arr});
                         }}/>
                     </label><br/>
@@ -211,14 +249,14 @@ class Table extends React.Component {
     //render the tokens
     renderTokens = () =>{
         //TODO: generate unique key for each token
-        return this.state.tokens.map((token, index) =>
+        return this.state.tokens.map((token) =>
             <Rnd
             default={{
                 x: 30,
                 y: 30,
                 width: 50,
             }}
-            lockAspectRatio={1}
+            lockAspectRatio={true}
             onDragStart={this.preventDragHandler}
             minHeight={30}
             minWidth={30}
@@ -226,15 +264,17 @@ class Table extends React.Component {
             onDrag={e => {
                 e.stopImmediatePropagation();
             }}
+            key={'rnd-'+token.key}
             >
-                <div className='token-X' key={index} onDoubleClick={() => {
-                    this.setState({tstyle: 'token-bye'});
-                }}
-                ><TiDelete/></div>
-                <img src={token} key={index+200} alt="token" style={{height: '100%', width:'100%'}} />
+                <img src={token.token} key={token.key} alt="token" style={{height: '100%', width:'100%'}} />
             </Rnd>
         );
     }
+
+    /*<div className='token-X' onDoubleClick={() => {
+        this.setState({tstyle: 'token-bye'});
+    }}
+    ><TiDelete/></div>*/
 
     //update the window dimensions
     updateWindowDimensions = () =>{
@@ -422,7 +462,6 @@ function Home() {
 }
 
 //====================================================================================================
-
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <Home />

@@ -37,7 +37,7 @@ function getRoom(code){
 
 function checkCode(code){
   for (let i = 0; i < rooms.length; i++) {
-    if (rooms[i].code == code) {
+    if (rooms[i].code == code){
       return true;
     }
   }
@@ -49,7 +49,7 @@ function broadcast(code, data, type){
   const room = getRoom(code);
   try {
     for (let i = 0; i < room.users.length; i++) {
-      room.users[i].emit(type, data);
+      room.users[i].socket.emit(type, data);
     }
   } catch(e) {
     console.log(e);
@@ -70,7 +70,11 @@ socketIo.on("connection",(socket)=>{
       console.log("Generated code " + code);
     }while(checkCode(code));
     //create room and add it to the rooms array
-    rooms.push(createRoom(code, socket));
+    const user = {
+      socket: socket,
+      role: "DM",
+    }
+    rooms.push(createRoom(code, user));
     //send code to client
     socket.emit("code",code);
   });
@@ -78,16 +82,34 @@ socketIo.on("connection",(socket)=>{
   socket.on("join",(data)=>{
     //check if room exists
     if(checkCode(data.code)){
+      const user = {
+        socket: socket,
+        role: "Player",
+      }
       //add user to room
-      getRoom(data.code).users.push(socket);
+      getRoom(data.code).users.push(user);
       //send code to client
       socket.emit("code",data.code);
+      //send message to all users in room
       const announcement = {
-        message: "A new adventurer joined the party :",
+        message: "A new adventurer joined the party.",
         usename: "",
-        cmd: true
       }
       broadcast(data.code, announcement, "message");
+
+      /*
+      //send command to the first client connected to share the room state
+      const command = {
+        command: "share",
+      }
+      for(let i = 0; i < getRoom(data.code).users.length; i++){
+        if(getRoom(data.code).users[i].role == "DM"){
+          getRoom(data.code).users[i].socket.emit("command", command);
+          break;
+        }
+      }
+      */
+
     }
     else{
       //send error to client
@@ -102,7 +124,28 @@ socketIo.on("connection",(socket)=>{
   });
 
   socket.on("message",(data)=>{
-    broadcast(data.code, data, "message");
+    
+    if(data.message[0] == "/"){
+      //if the message is a command parse it
+      const parsed = data.message.split(" ");
+
+      switch(data.message[1]){
+        case "d":{
+          //if the command is a dice roll
+          const result = Math.floor(Math.random() * parsed[1]) + 1;
+          const announcement = {
+            message: data.username + " rolled a " + result + " on a d" + parsed[1],
+            usename: "",
+          }
+          if((parsed[2] == "+") && parsed[3]){
+            announcement.message += " + " + parsed[3];
+          }
+          broadcast(data.code, announcement, "message");
+        }
+      }
+    } else {
+      broadcast(data.code, data, "message");
+    }
   });
 
   /*
@@ -112,7 +155,7 @@ socketIo.on("connection",(socket)=>{
   });*/
 
   socket.on("map", (data) => {
-    const imageData = data.file.buffer;
+    const imageData = data.file;
     broadcast(data.code, imageData, "map");
   });
 
