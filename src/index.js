@@ -85,14 +85,24 @@ class Table extends React.Component {
         //print message to console when disconnected
         socket.on('disconnect',()=>console.log('disconnected'));
 
-        //set state
+        //set map when received from server
         socket.on('map', (data) => {
             const blobby = new Blob([data], {type: 'image/jpeg'});
             console.log(blobby);
             this.setState({map: URL.createObjectURL(blobby)});
         });
 
-        this.mapref = React.createRef(null);
+        socket.on('token', (data) => {
+            const blobby = new Blob([data], {type: 'image/jpeg'});
+            console.log(blobby);
+            let arr = this.state.tokens;
+            const element = {
+                token: URL.createObjectURL(blobby),
+                key: arr.length,
+            }
+            arr.push(element);
+            this.setState({tokens: arr});
+        });
         
         this.state = {
             socket: socket,
@@ -154,10 +164,8 @@ class Table extends React.Component {
                 e.stopImmediatePropagation();
             }}
             key={'rnd-map'}
-            ref={this.mapref}
             id={'rnd-map'}
-            onDragStop={(e, d) => {
-                console.log(d.x, d.y);
+            onDragStop={(d) => {
                 const update = {
                     x: d.x,
                     y: d.y,
@@ -222,14 +230,23 @@ class Table extends React.Component {
                     <label title='Upload Token' htmlFor='uploadToken'>
                         <MdAddCircle />
                         <input type="file" id="uploadToken" style={{display:'none'}} onChange={(e) => {
-                            let arr = this.state.tokens;
-                            const element = {
-                                token: URL.createObjectURL(e.target.files[0]),
-                                key: arr.length,
+                            try{
+                                //create blob from file
+                                const token_image = new Blob([e.target.files[0]], {type: 'image/jpeg'});
+                                //build file data object
+                                const fileData = {
+                                    code: this.state.code,
+                                    file: token_image,
+                                }
+                                // Emit the file data to the server through the socket
+                                this.state.socket.emit('token', fileData);
+                            } catch (err) {
+                                console.log(err);
                             }
 
-                            arr.push(element);
-                            this.setState({tokens: arr});
+
+
+
                         }}/>
                     </label><br/>
 
@@ -286,7 +303,17 @@ class Table extends React.Component {
             onDrag={e => {
                 e.stopImmediatePropagation();
             }}
+            onDragStop={(d) => {
+                const update = {
+                    x: d.x,
+                    y: d.y,
+                    id: 'rnd-'+token.key,
+                    code: this.state.code,
+                }
+                this.state.socket.emit('update', update);
+            }}
             key={'rnd-'+token.key}
+            id={'rnd-'+token.key}
             >
                 <img src={token.token} key={token.key} alt="token" style={{height: '100%', width:'100%'}} />
             </Rnd>

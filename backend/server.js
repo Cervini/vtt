@@ -157,6 +157,11 @@ socketIo.on("connection",(socket)=>{
     broadcast(data.code, data, "update");
   });
 
+  socket.on("token", (data) => {
+    const imageData = data.file;
+    broadcast(data.code, imageData, "token");
+  });
+
 })
 
 server.listen(PORT, err=> {
