@@ -10,5 +10,5 @@
  - [ ] Updated state on join
  - [x] Synched token
  - [x] Synched map view
- - [ ] Synched token view
+ - [x] Synched token view
  - [ ] Adjustable grid size

@@ -8,6 +8,7 @@ import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icon
 import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
 
+const img = React.createRef();
 
 const ADDRESS = 'http://localhost:8080';
 
@@ -90,6 +91,12 @@ class Table extends React.Component {
         //set map when received from server
         socket.on('map', (data) => {
             const blobby = new Blob([data], {type: 'image/jpeg'});
+            /*blobby.getSize(data, (width, height) => { 
+                this.setState({
+                    height: height,
+                    width: width,
+                })
+            });*/
             this.setState({map: URL.createObjectURL(blobby)});
         });
 
@@ -105,7 +112,7 @@ class Table extends React.Component {
             arr.push(element);
             this.setState({tokens: arr});
         });
-        
+
         this.state = {
             socket: socket,
             role: role,
@@ -145,7 +152,15 @@ class Table extends React.Component {
     renderMap = () =>{
         return (
             <div className='map-container'>
-                <img src={this.state.map} draggable={false} key={'map'} alt='map' className='battlemap'/>
+                <div className='for-grid'>
+                    {this.renderGrid()}
+                </div>
+                <img src={this.state.map} draggable={false} key={'map'} alt='map' className='battlemap' ref={img} onLoad={() => {
+                    this.setState({
+                        height: img.current.clientHeight,
+                        width: img.current.clientWidth,
+                    });
+                }}/>
                 {this.renderTokens()}
             </div>
         );
@@ -416,9 +431,6 @@ class Table extends React.Component {
     render() {
         return (
             <div className='container'>
-                <div className='for-grid'>
-                    {this.renderGrid()}
-                </div>
                 {this.renderMap()}
                 {this.renderCommands()}
                 {this.renderChat()}
