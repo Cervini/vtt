@@ -21,7 +21,6 @@ class Table extends React.Component {
             //room creation routine
             socket = io(ADDRESS);
             socket.on('connect', () => {
-                console.log(socket.id);
                 socket.emit('create', {});
             });
             username = 'DM';
@@ -91,13 +90,11 @@ class Table extends React.Component {
         //set map when received from server
         socket.on('map', (data) => {
             const blobby = new Blob([data], {type: 'image/jpeg'});
-            console.log(blobby);
             this.setState({map: URL.createObjectURL(blobby)});
         });
 
         socket.on('token', (data) => {
             const blobby = new Blob([data], {type: 'image/jpeg'});
-            console.log(blobby);
             let arr = this.state.tokens;
             const element = {
                 token: URL.createObjectURL(blobby),
@@ -119,25 +116,12 @@ class Table extends React.Component {
             tokens: [],
             grid: true,
             username: username,
-            width: 0,
-            height: 0,
             messages: [],
             newMessage: '',
             files: [],
-            };
-        this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-    }
-    
-    //when component mounts, add event listener for window resize
-    componentDidMount = () =>{
-        this.updateWindowDimensions();
-        window.addEventListener('resize', this.updateWindowDimensions);
-    }
-    
-    //when component unmounts, remove event listener for window resize
-    componentWillUnmount = () =>{
-        window.removeEventListener('resize', this.updateWindowDimensions);
-        //clearInterval(this.state.interval);
+            height: 570,
+            width: 1290,
+        };
     }
 
     updatePosition = (x, y, id) => {
@@ -161,7 +145,7 @@ class Table extends React.Component {
     renderMap = () =>{
         return (
             <div className='map-container'>
-                <img src={this.state.map} draggable={false} key={'map'} alt='map' style={{width: '100%'}}/>
+                <img src={this.state.map} draggable={false} key={'map'} alt='map' className='battlemap'/>
                 {this.renderTokens()}
             </div>
         );
