@@ -221,3 +221,10 @@ token-bye {
     width: 150px;
     border-radius: 10px;
 }
+
+.map-container {
+    position: absolute;
+    height: auto;
+    width: auto;
+    top: 5px;
+}

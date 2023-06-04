@@ -8,6 +8,9 @@ import { MdMap, MdAddCircle, MdGridOn, MdControlPoint, MdSend } from 'react-icon
 import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
 
+
+const ADDRESS = 'http://localhost:8080';
+
 class Table extends React.Component {
 
     //constructor required room 'code'
@@ -16,7 +19,7 @@ class Table extends React.Component {
         let socket, username, role;
         if(this.props.type === 'create'){
             //room creation routine
-            socket = io('http://localhost:8080');
+            socket = io(ADDRESS);
             socket.on('connect', () => {
                 console.log(socket.id);
                 socket.emit('create', {});
@@ -25,7 +28,7 @@ class Table extends React.Component {
             role = 'DM';
         } else {
             //room joining routine
-            socket = io('http://localhost:8080');
+            socket = io(ADDRESS);
             socket.on('connect', () => {
                 console.log(socket.id);
                 socket.emit('join', {code: this.props.code});
@@ -74,7 +77,7 @@ class Table extends React.Component {
         });
 
         socket.on('update', (data) => {
-            this.updatePosition(data.x, data.y, data.id);
+            this.updatePosition(data.x, data.y, data.key);
         });
 
         //error handling
@@ -99,6 +102,8 @@ class Table extends React.Component {
             const element = {
                 token: URL.createObjectURL(blobby),
                 key: arr.length,
+                x: 0,
+                y: 0,
             }
             arr.push(element);
             this.setState({tokens: arr});
@@ -136,11 +141,14 @@ class Table extends React.Component {
     }
 
     updatePosition = (x, y, id) => {
-        const element = document.getElementById(id);
-        console.log(element);
-        if (element) {
-            element.style.left = `${x}px`;
-            element.style.top = `${y}px`;
+        for(let i = 0; i < this.state.tokens.length; i++){
+            if(this.state.tokens[i].key === id){
+                let arr = this.state.tokens;
+                arr[i].x = x;
+                arr[i].y = y;
+                this.setState({tokens: arr});
+                break;
+            }
         }
     };
     
@@ -152,32 +160,10 @@ class Table extends React.Component {
     //render the map
     renderMap = () =>{
         return (
-            <Rnd
-            default={{
-                x: 50,
-                y: 0,
-                width: 1000,
-            }}
-            onDragStart={this.preventDragHandler}
-            lockAspectRatio={true}
-            onDrag={e => {
-                e.stopImmediatePropagation();
-            }}
-            key={'rnd-map'}
-            id={'rnd-map'}
-            onDragStop={(d) => {
-                const update = {
-                    x: d.x,
-                    y: d.y,
-                    id: 'rnd-map',
-                    code: this.state.code,
-                }
-                this.state.socket.emit('update', update);
-            }}
-            >
-                <img src={this.state.map} key={'map'} alt='map' style={{width: '100%'}}/>
+            <div className='map-container'>
+                <img src={this.state.map} draggable={false} key={'map'} alt='map' style={{width: '100%'}}/>
                 {this.renderTokens()}
-            </Rnd>
+            </div>
         );
     }
 
@@ -200,17 +186,6 @@ class Table extends React.Component {
                         <MdMap />
                         <input type="file" id="uploadMap" style={{display:'none'}} onChange={(e) => {
                             try{
-
-                                /*
-                                //add file to array of files
-                                const element = {
-                                    //type of the file is map
-                                    type: 'map',
-                                    file: e.target.files[0],
-                                }
-                                this.state.files.push(element);
-                                */
-
                                 //create blob from file
                                 const image = new Blob([e.target.files[0]], {type: 'image/jpeg'});
                                 this.setState({ map: URL.createObjectURL(image) });
@@ -290,9 +265,8 @@ class Table extends React.Component {
     renderTokens = () =>{
         return this.state.tokens.map((token) =>
             <Rnd
+            position={{ x: token.x, y: token.y }}
             default={{
-                x: 30,
-                y: 30,
                 width: 50,
             }}
             lockAspectRatio={true}
@@ -302,28 +276,29 @@ class Table extends React.Component {
             className={this.state.tstyle}
             onDrag={e => {
                 e.stopImmediatePropagation();
+                console.log()
             }}
             onDragStop={(d) => {
+                const string = document.getElementById("rnd-"+token.key).style.transform;
+                let filtered = /translate\((-?\d+)px, (-?\d+)px\)/;
+                let arr = string.match(filtered);
+                const x = parseInt(arr[1]);
+                const y = parseInt(arr[2]);
                 const update = {
-                    x: d.x,
-                    y: d.y,
-                    id: 'rnd-'+token.key,
+                    x: x,
+                    y: y,
+                    key: token.key,
                     code: this.state.code,
                 }
                 this.state.socket.emit('update', update);
             }}
-            key={'rnd-'+token.key}
-            id={'rnd-'+token.key}
+            key={"rnd-"+token.key}
+            id={"rnd-"+token.key}
             >
                 <img src={token.token} key={token.key} alt="token" style={{height: '100%', width:'100%'}} />
             </Rnd>
         );
     }
-
-    /*<div className='token-X' onDoubleClick={() => {
-        this.setState({tstyle: 'token-bye'});
-    }}
-    ><TiDelete/></div>*/
 
     //update the window dimensions
     updateWindowDimensions = () =>{
@@ -334,7 +309,7 @@ class Table extends React.Component {
     renderGrid = () =>{
         if(this.state.grid){
             const grid = [];
-            let cellSize = 50;
+            let cellSize = 30;
             //get the height and width of the window to minimize the number of cells rendered
             let numRows = this.state.height/cellSize;
             let numCols = this.state.width/cellSize;
