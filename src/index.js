@@ -220,21 +220,19 @@ class Table extends React.Component {
                         }}/>
                     </label><br/>
 
-                    <div title='Toggle Grid' id='drawGrid' onClick={() => {
+                    <div>
+                        <MdGridOn  title='Toggle Grid' id='drawGrid' onClick={() => {
                             if(this.state.grid){
                                 this.setState({grid: false});
                             } else {
                                 this.setState({grid: true});
                             }
-                    }}>
-                        <MdGridOn />
-                    </div>
-
-                    <div title='Grid size'>
-                        <input type="range" orient="vertical" id="sizeGrid" min="10" max="250" onChange={() => {
+                        }}/>
+                        <input title="Grid Size" type="range" className="gridSize" orient="vertical" id="sizeGrid" min="10" max="250" onChange={() => {
                             
                         }}></input>  
                     </div>
+
 
                     <div title='Clear Room' id="clearRoom" onClick={() => {
                         this.setState({map: battlemap, tokens: []});

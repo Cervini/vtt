@@ -256,3 +256,8 @@ token-bye {
 	background-color: rgba(106, 241, 169, 0.34);
 	border-radius: 10px;
 }
+
+.gridSize {
+    transform: rotate(270deg);
+    -moz-transform: rotate(270deg); 
+}
