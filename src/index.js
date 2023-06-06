@@ -217,10 +217,6 @@ class Table extends React.Component {
                             } catch (err) {
                                 console.log(err);
                             }
-
-
-
-
                         }}/>
                     </label><br/>
 
@@ -232,6 +228,12 @@ class Table extends React.Component {
                             }
                     }}>
                         <MdGridOn />
+                    </div>
+
+                    <div title='Grid size'>
+                        <input type="range" orient="vertical" id="sizeGrid" min="10" max="250" onChange={() => {
+                            
+                        }}></input>  
                     </div>
 
                     <div title='Clear Room' id="clearRoom" onClick={() => {
@@ -458,6 +460,9 @@ function Join() {
                         root.render(<Table type='join' code={roomCode}/>);
                     }
                 }}>Join</button>
+                <button className='btn' type='submit' onClick={() => {
+                    root.render(<Home />);
+                }}>Back</button>
             </div>
         </div>
     );
