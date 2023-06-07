@@ -102,7 +102,6 @@ body {
     bottom: 0px;
     width: 40px;
     height: 100vh;
-    padding: -20px 0;
     margin-top: 25px;
     line-height: 50px;
 }
@@ -259,5 +258,10 @@ token-bye {
 
 .gridSize {
     transform: rotate(270deg);
-    -moz-transform: rotate(270deg); 
+    -moz-transform: rotate(270deg);
+    height: 190px;
+}
+
+.grid {
+    height: 200px;
 }

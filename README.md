@@ -11,4 +11,4 @@
  - [x] Synched token
  - [x] Synched map view
  - [x] Synched token view
- - [ ] Adjustable grid size
+ - [x] Adjustable grid size

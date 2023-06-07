@@ -128,6 +128,7 @@ class Table extends React.Component {
             files: [],
             height: 570,
             width: 1290,
+            cellSize: 30,
         };
     }
 
@@ -220,7 +221,7 @@ class Table extends React.Component {
                         }}/>
                     </label><br/>
 
-                    <div>
+                    <div className='container grid'>
                         <MdGridOn  title='Toggle Grid' id='drawGrid' onClick={() => {
                             if(this.state.grid){
                                 this.setState({grid: false});
@@ -228,8 +229,9 @@ class Table extends React.Component {
                                 this.setState({grid: true});
                             }
                         }}/>
-                        <input title="Grid Size" type="range" className="gridSize" orient="vertical" id="sizeGrid" min="10" max="250" onChange={() => {
-                            
+                        <input title="Grid Size" type="range" className="gridSize" orient="vertical" id="sizeGrid" min="10" max="250" value={this.state.cellSize} onChange={(e) => {
+                            console.log(e.target.value);
+                            this.setState({cellSize: e.target.value});
                         }}></input>  
                     </div>
 
@@ -266,7 +268,7 @@ class Table extends React.Component {
             <Rnd
             position={{ x: token.x, y: token.y }}
             default={{
-                width: 50,
+                width: this.state.cellSize,
             }}
             lockAspectRatio={true}
             onDragStart={this.preventDragHandler}
@@ -275,7 +277,6 @@ class Table extends React.Component {
             className={this.state.tstyle}
             onDrag={e => {
                 e.stopImmediatePropagation();
-                console.log()
             }}
             onDragStop={(d) => {
                 const string = document.getElementById("rnd-"+token.key).style.transform;
@@ -283,6 +284,8 @@ class Table extends React.Component {
                 let arr = string.match(filtered);
                 const x = parseInt(arr[1]);
                 const y = parseInt(arr[2]);
+                token.x = x;
+                token.y = y;
                 const update = {
                     x: x,
                     y: y,
@@ -308,22 +311,20 @@ class Table extends React.Component {
     renderGrid = () =>{
         if(this.state.grid){
             const grid = [];
-            let cellSize = 30;
-            //get the height and width of the window to minimize the number of cells rendered
-            let numRows = this.state.height/cellSize;
-            let numCols = this.state.width/cellSize;
+            let numRows = this.state.height/this.state.cellSize;
+            let numCols = this.state.width/this.state.cellSize;
             for (let row = 0; row < numRows; row++) {
                 for (let col = 0; col < numCols; col++) {
                     const cellStyle = {
-                    top: row * cellSize,
-                    left: col * cellSize,
-                    width: cellSize,
-                    height: cellSize,
+                    top: row * this.state.cellSize,
+                    left: col * this.state.cellSize,
+                    width: this.state.cellSize + "px",
+                    height: this.state.cellSize + "px",
                     border: '1px solid grey',
                     position: 'absolute',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
                     };
-                    grid.push(<div style={cellStyle} key={`${row}-${col}`} />);
+                    grid.push(<div style={cellStyle} key={`${row}-${col}`}></div>);
                 }
             }
             return grid;
