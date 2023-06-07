@@ -157,6 +157,10 @@ socketIo.on("connection",(socket)=>{
     broadcast(data.code, data, "update");
   });
 
+  socket.on("grid", (data) => {
+    broadcast(data.code, data, "grid");
+  });
+
   socket.on("token", (data) => {
     const imageData = data.file;
     broadcast(data.code, imageData, "token");

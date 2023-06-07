@@ -113,6 +113,11 @@ class Table extends React.Component {
             this.setState({tokens: arr});
         });
 
+        socket.on('grid', (data) => {
+            console.log(data.cellSize + "recieved");
+            this.setState({cellSize: data.cellSize});
+        });
+
         this.state = {
             socket: socket,
             role: role,
@@ -132,6 +137,7 @@ class Table extends React.Component {
         };
     }
 
+    //update the position of a token given coordinates and the token id
     updatePosition = (x, y, id) => {
         for(let i = 0; i < this.state.tokens.length; i++){
             if(this.state.tokens[i].key === id){
@@ -223,6 +229,7 @@ class Table extends React.Component {
 
                     <div className='container grid'>
                         <MdGridOn  title='Toggle Grid' id='drawGrid' onClick={() => {
+                            //toggle grid
                             if(this.state.grid){
                                 this.setState({grid: false});
                             } else {
@@ -230,9 +237,11 @@ class Table extends React.Component {
                             }
                         }}/>
                         <input title="Grid Size" type="range" className="gridSize" orient="vertical" id="sizeGrid" min="10" max="250" value={this.state.cellSize} onChange={(e) => {
-                            console.log(e.target.value);
+                            //change grid size
                             this.setState({cellSize: e.target.value});
-                        }}></input>  
+                            //emit changes to server
+                            this.state.socket.emit('grid', {code: this.state.code, cellSize: e.target.value});
+                        }}></input>
                     </div>
 
 
