@@ -54,7 +54,6 @@ function broadcast(code, data, type){
   } catch(e) {
     console.log(e);
   }
-  
 }
 
 socketIo.on("connection",(socket)=>{
@@ -97,19 +96,15 @@ socketIo.on("connection",(socket)=>{
       }
       broadcast(data.code, announcement, "message");
 
-      /*
-      //send command to the first client connected to share the room state
-      const command = {
-        command: "share",
-      }
-      for(let i = 0; i < getRoom(data.code).users.length; i++){
+      //look for DM in room
+      for (let i = 0; i < getRoom(data.code).users.length; i++) {
         if(getRoom(data.code).users[i].role == "DM"){
-          getRoom(data.code).users[i].socket.emit("command", command);
-          break;
+          const socket = {
+            id: user.socket.id,
+          }
+          getRoom(data.code).users[i].socket.emit("state", socket);
         }
       }
-      */
-
     }
     else{
       //send error to client
@@ -124,7 +119,7 @@ socketIo.on("connection",(socket)=>{
   });
 
   socket.on("message",(data)=>{
-    
+
     if(data.message[0] == "/"){
       //if the message is a command parse it
       const parsed = data.message.split(" ");
@@ -154,7 +149,15 @@ socketIo.on("connection",(socket)=>{
   });
 
   socket.on("update", (data) => {
-    broadcast(data.code, data, "update");
+    if(!data.id){
+      broadcast(data.code, data, "update");
+    } else {
+      for(let i = 0; i < getRoom(data.code).users.length; i++){
+        if(getRoom(data.code).users[i].socket.id == data.id){
+          getRoom(data.code).users[i].socket.emit("update", data);
+        }
+      }
+    }
   });
 
   socket.on("grid", (data) => {
@@ -162,10 +165,22 @@ socketIo.on("connection",(socket)=>{
   });
 
   socket.on("token", (data) => {
-    const imageData = data.file;
-    broadcast(data.code, imageData, "token");
+    if(!data.id){
+      const imageData = data.file;
+      broadcast(data.code, imageData, "token");
+    } else {
+      const imageData = data.file;
+      for(let i = 0; i < getRoom(data.code).users.length; i++){
+        if(getRoom(data.code).users[i].socket.id == data.id){
+          console.log("sending token to " + getRoom(data.code).users[i].socket.id);
+          getRoom(data.code).users[i].socket.emit("token", imageData);
+        }
+      }
+    }
+    
   });
 
+  
 })
 
 server.listen(PORT, err=> {

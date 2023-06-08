@@ -9,8 +9,8 @@ import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
 
 const img = React.createRef();
-
-const ADDRESS = 'http://localhost:8080';
+const ADDRESS = 'http://192.168.0.46:8080';
+let mapFile, tokenFiles = [];
 
 class Table extends React.Component {
 
@@ -50,32 +50,6 @@ class Table extends React.Component {
         //set room code when received from server
         socket.on('code',(data) => (this.setState({code:data})));
 
-        socket.on('command', (data) => {
-            switch(data.command){
-                case 'share': {
-                    console.log('share command received');
-                    let image;
-                    //find the map in the files array
-                    for(let i = 0; i < this.state.files.length; i++){
-                        if(this.state.files[i].type === 'map'){
-                            image = this.state.files[i].file;
-                        }
-                    }
-                    //build file data object
-                    const fileData = {
-                        code: this.state.code,
-                        file: image,
-                    }
-                    // Emit the file data to the server through the socket
-                    this.state.socket.emit('map', fileData);
-                    break;
-                }
-                default: {
-                    console.log('Unknown command');
-                }
-            }
-        });
-
         socket.on('update', (data) => {
             this.updatePosition(data.x, data.y, data.key);
         });
@@ -91,12 +65,6 @@ class Table extends React.Component {
         //set map when received from server
         socket.on('map', (data) => {
             const blobby = new Blob([data], {type: 'image/jpeg'});
-            /*blobby.getSize(data, (width, height) => { 
-                this.setState({
-                    height: height,
-                    width: width,
-                })
-            });*/
             this.setState({map: URL.createObjectURL(blobby)});
         });
 
@@ -116,6 +84,27 @@ class Table extends React.Component {
         socket.on('grid', (data) => {
             console.log(data.cellSize + "recieved");
             this.setState({cellSize: data.cellSize});
+        });
+
+        socket.on('state', (data) => {
+            // Emit the mapFile (stored locally when the map was uploaded)
+            const id = data.id;
+            this.state.socket.emit('map', mapFile);
+            for(let i=0; i < tokenFiles.length; i++){
+                tokenFiles[i].id = id;
+                this.state.socket.emit('token', tokenFiles[i]);
+            }
+            for(let i=0; i < this.state.tokens.length; i++){
+                const update = {
+                    x: this.state.tokens[i].x,
+                    y: this.state.tokens[i].y,
+                    key: this.state.tokens[i].key,
+                    code: this.state.code,
+                    id: id,
+                }
+                this.state.socket.emit('update', update);
+            }
+            this.state.socket.emit('grid', {code: this.state.code, cellSize: this.state.cellSize});
         });
 
         this.state = {
@@ -200,6 +189,7 @@ class Table extends React.Component {
                                     code: this.state.code,
                                     file: image,
                                 }
+                                mapFile = fileData;
                                 // Emit the file data to the server through the socket
                                 this.state.socket.emit('map', fileData);
                             } catch (err) {
@@ -218,7 +208,9 @@ class Table extends React.Component {
                                 const fileData = {
                                     code: this.state.code,
                                     file: token_image,
+                                    id: null,
                                 }
+                                tokenFiles.push(fileData);
                                 // Emit the file data to the server through the socket
                                 this.state.socket.emit('token', fileData);
                             } catch (err) {
@@ -495,6 +487,7 @@ function Home() {
 }
 
 //====================================================================================================
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <Home />

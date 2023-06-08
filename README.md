@@ -7,8 +7,9 @@
 ## Task List
 
  - [x] Dice roll chat commands
- - [ ] Updated state on join
+ - [x] Updated state on join
  - [x] Synched token
  - [x] Synched map view
  - [x] Synched token view
  - [x] Adjustable grid size
+ - [ ] Removable tokens
