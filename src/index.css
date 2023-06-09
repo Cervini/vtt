@@ -45,6 +45,12 @@ body {
     border-radius: 10px;
 }
   
+.mini {
+    width: 75px;
+    height: 30px;
+    padding: 0px;
+}
+
 .btn:hover {
     background-color: rgb(106, 241, 169);
     color: rgb(50, 63, 63);
@@ -264,4 +270,10 @@ token-bye {
 
 .grid {
     height: 200px;
+}
+
+.lateral {
+    bottom: 0px;
+    height: 50px;
+    left: 100px;
 }

@@ -9,13 +9,15 @@ import { FaTrashAlt } from 'react-icons/fa';
 import { RiUserSettingsLine } from 'react-icons/ri';
 
 const img = React.createRef();
-const ADDRESS = 'http://192.168.0.46:8080';
+const ADDRESS = 'http://localhost:8080';
+//locally memorized map and token files
 let mapFile, tokenFiles = [];
 
 class Table extends React.Component {
 
     //constructor required room 'code'
     constructor(props){
+
         super(props);
         let socket, username, role;
         if(this.props.type === 'create'){
@@ -30,7 +32,6 @@ class Table extends React.Component {
             //room joining routine
             socket = io(ADDRESS);
             socket.on('connect', () => {
-                console.log(socket.id);
                 socket.emit('join', {code: this.props.code});
             });
             username = 'Adventurer';
@@ -64,16 +65,17 @@ class Table extends React.Component {
 
         //set map when received from server
         socket.on('map', (data) => {
-            const blobby = new Blob([data], {type: 'image/jpeg'});
+            const blobby = new Blob([data.file], {type: 'image/jpeg'});
             this.setState({map: URL.createObjectURL(blobby)});
         });
 
         socket.on('token', (data) => {
-            const blobby = new Blob([data], {type: 'image/jpeg'});
+            const blobby = new Blob([data.file], {type: 'image/jpeg'});
             let arr = this.state.tokens;
+            console.log(data.key);
             const element = {
                 token: URL.createObjectURL(blobby),
-                key: arr.length,
+                key: data.key,
                 x: 0,
                 y: 0,
             }
@@ -82,14 +84,17 @@ class Table extends React.Component {
         });
 
         socket.on('grid', (data) => {
-            console.log(data.cellSize + "recieved");
             this.setState({cellSize: data.cellSize});
         });
 
         socket.on('state', (data) => {
             // Emit the mapFile (stored locally when the map was uploaded)
             const id = data.id;
-            this.state.socket.emit('map', mapFile);
+            const dataFile = {
+                code: this.state.code,
+                file: mapFile,
+            };
+            this.state.socket.emit('map', dataFile);
             for(let i=0; i < tokenFiles.length; i++){
                 tokenFiles[i].id = id;
                 this.state.socket.emit('token', tokenFiles[i]);
@@ -107,6 +112,10 @@ class Table extends React.Component {
             this.state.socket.emit('grid', {code: this.state.code, cellSize: this.state.cellSize});
         });
 
+        socket.on('delete', (data) => {
+            this.deleteToken(data.key);
+        });
+
         this.state = {
             socket: socket,
             role: role,
@@ -115,6 +124,7 @@ class Table extends React.Component {
             appear: false,
             usermenu: false,
             tokens: [],
+            tmenu: false,
             grid: true,
             username: username,
             messages: [],
@@ -183,13 +193,15 @@ class Table extends React.Component {
                             try{
                                 //create blob from file
                                 const image = new Blob([e.target.files[0]], {type: 'image/jpeg'});
+                                //set map
                                 this.setState({ map: URL.createObjectURL(image) });
                                 //build file data object
                                 const fileData = {
                                     code: this.state.code,
                                     file: image,
                                 }
-                                mapFile = fileData;
+                                //copy file to local memory
+                                mapFile = image;
                                 // Emit the file data to the server through the socket
                                 this.state.socket.emit('map', fileData);
                             } catch (err) {
@@ -204,13 +216,23 @@ class Table extends React.Component {
                             try{
                                 //create blob from file
                                 const token_image = new Blob([e.target.files[0]], {type: 'image/jpeg'});
+                                //generate token key
+                                const time = new Date();
+                                const token_key = "k"+this.state.code.toString()+time.getTime().toString();
                                 //build file data object
+                                console.log("rnd-"+token_key);
                                 const fileData = {
                                     code: this.state.code,
                                     file: token_image,
+                                    key: token_key,
                                     id: null,
                                 }
-                                tokenFiles.push(fileData);
+                                tokenFiles.push({
+                                    code: this.state.code,
+                                    file: token_image,
+                                    key: token_key,
+                                    id: null,
+                                });
                                 // Emit the file data to the server through the socket
                                 this.state.socket.emit('token', fileData);
                             } catch (err) {
@@ -235,7 +257,6 @@ class Table extends React.Component {
                             this.state.socket.emit('grid', {code: this.state.code, cellSize: e.target.value});
                         }}></input>
                     </div>
-
 
                     <div title='Clear Room' id="clearRoom" onClick={() => {
                         this.setState({map: battlemap, tokens: []});
@@ -297,10 +318,39 @@ class Table extends React.Component {
             }}
             key={"rnd-"+token.key}
             id={"rnd-"+token.key}
+            onClick={() => {
+                this.toggleTokenMenu(token.key);
+            }}
             >
                 <img src={token.token} key={token.key} alt="token" style={{height: '100%', width:'100%'}} />
             </Rnd>
         );
+    }
+
+    //toggle the token menu
+    toggleTokenMenu = (key) => {
+        console.log("token toggled");
+        if(this.state.tmenu === key){
+            this.setState({tmenu: false});
+        } else {
+            this.setState({tmenu: key});
+        }
+    }
+
+    renderTokenMenu = () => {
+        if(this.state.tmenu!==false){
+            return (
+                <div className='over container lateral'>
+                    <button className='btn mini' type='submit' onClick={() => {
+                        this.deleteToken(this.state.tmenu);
+                        this.setState({tmenu: false});
+                    }}>Delete</button>
+                </div>
+            );
+        } else {
+            return null;
+        }
+        
     }
 
     //update the window dimensions
@@ -362,18 +412,22 @@ class Table extends React.Component {
         );
     }
 
+    //set messages state
     setMessages = (messages) => {
         this.setState({messages: messages});
     }
 
+    //set newMessage state
     setNewMessage = (newMessage) => {
         this.setState({newMessage: newMessage});
     }
 
+    //get typed message from input
     handleInputChange = (event) => {
         this.setNewMessage(event.target.value);
     }
 
+    //send message to server
     handleSendMessage = () => {
         let temp = this.state.newMessage;
         if (this.state.newMessage.trim() !== '') {
@@ -429,10 +483,23 @@ class Table extends React.Component {
         }
     }
 
+    deleteToken = (key) => {
+        let arr = this.state.tokens;
+        for(let i = 0; i < arr.length; i++){
+            if(arr[i].key === key){
+                arr.splice(i, 1);
+                break;
+            }
+        }
+        this.setState({tokens: arr});
+        this.state.socket.emit('delete', {code: this.state.code, key: key});
+    }
+
     //render the table
     render() {
         return (
             <div className='container'>
+                {this.renderTokenMenu()}
                 {this.renderMap()}
                 {this.renderCommands()}
                 {this.renderChat()}

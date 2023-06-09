@@ -144,8 +144,7 @@ socketIo.on("connection",(socket)=>{
   });
 
   socket.on("map", (data) => {
-    const imageData = data.file;
-    broadcast(data.code, imageData, "map");
+    broadcast(data.code, data, "map");
   });
 
   socket.on("update", (data) => {
@@ -166,14 +165,13 @@ socketIo.on("connection",(socket)=>{
 
   socket.on("token", (data) => {
     if(!data.id){
-      const imageData = data.file;
-      broadcast(data.code, imageData, "token");
+      //const imageData = data.file;
+      broadcast(data.code, data, "token");
     } else {
-      const imageData = data.file;
       for(let i = 0; i < getRoom(data.code).users.length; i++){
         if(getRoom(data.code).users[i].socket.id == data.id){
           console.log("sending token to " + getRoom(data.code).users[i].socket.id);
-          getRoom(data.code).users[i].socket.emit("token", imageData);
+          getRoom(data.code).users[i].socket.emit("token", data);
         }
       }
     }
