@@ -78,6 +78,8 @@ class Table extends React.Component {
                 key: data.key,
                 x: 0,
                 y: 0,
+                w: data.w,
+                h: data.h,
             }
             arr.push(element);
             this.setState({tokens: arr});
@@ -88,13 +90,16 @@ class Table extends React.Component {
         });
 
         socket.on('state', (data) => {
-            // Emit the mapFile (stored locally when the map was uploaded)
             const id = data.id;
-            const dataFile = {
-                code: this.state.code,
-                file: mapFile,
-            };
-            this.state.socket.emit('map', dataFile);
+            // Emit the mapFile (stored locally when the map was uploaded)
+            if(mapFile){
+                // Emit only if the map was changed from the default one
+                const dataFile = {
+                    code: this.state.code,
+                    file: mapFile,
+                };
+                this.state.socket.emit('map', dataFile);
+            }
             for(let i=0; i < tokenFiles.length; i++){
                 tokenFiles[i].id = id;
                 this.state.socket.emit('token', tokenFiles[i]);
@@ -103,6 +108,8 @@ class Table extends React.Component {
                 const update = {
                     x: this.state.tokens[i].x,
                     y: this.state.tokens[i].y,
+                    w: this.state.tokens[i].w,
+                    h: this.state.tokens[i].h,
                     key: this.state.tokens[i].key,
                     code: this.state.code,
                     id: id,
@@ -113,7 +120,30 @@ class Table extends React.Component {
         });
 
         socket.on('delete', (data) => {
-            this.deleteToken(data.key);
+            console.log("delete token");
+            for(let i = 0; i < this.state.tokens.length; i++){
+                if(this.state.tokens[i].key === data.key){
+                    this.deleteToken(data.key);
+                    break;
+                }
+            }
+        });
+
+        socket.on('resize' , (data) => {
+            for(let i = 0; i < this.state.tokens.length; i++){
+                const arr = this.state.tokens;
+                if(arr[i].key === data.key){
+                    arr[i].w = data.w;
+                    arr[i].h = data.h;
+                }
+                this.setState({tokens: arr});
+            }
+            for(let i=0; i<tokenFiles.length; i++){
+                if(tokenFiles[i].key === data.key){
+                    tokenFiles[i].w = data.w;
+                    tokenFiles[i].h = data.h;
+                }
+            }
         });
 
         this.state = {
@@ -225,12 +255,16 @@ class Table extends React.Component {
                                     code: this.state.code,
                                     file: token_image,
                                     key: token_key,
+                                    w: this.state.cellSize,
+                                    h: this.state.cellSize,
                                     id: null,
                                 }
                                 tokenFiles.push({
                                     code: this.state.code,
                                     file: token_image,
                                     key: token_key,
+                                    w: this.state.cellSize,
+                                    h: this.state.cellSize,
                                     id: null,
                                 });
                                 // Emit the file data to the server through the socket
@@ -290,8 +324,10 @@ class Table extends React.Component {
             <Rnd
             position={{ x: token.x, y: token.y }}
             default={{
-                width: this.state.cellSize,
+                width: token.w,
+                height: token.h,
             }}
+            size={{ width: token.w, height: token.h }}
             lockAspectRatio={true}
             onDragStart={this.preventDragHandler}
             minHeight={30}
@@ -315,6 +351,18 @@ class Table extends React.Component {
                     code: this.state.code,
                 }
                 this.state.socket.emit('update', update);
+            }}
+            onResizeStop={(e, dir, ref, delta, position) => {
+                token.w += delta.width;
+                token.h += delta.height;
+                const resize = {
+                    w: token.w,
+                    h: token.w,
+                    key: token.key,
+                    code: this.state.code,
+                }
+                console.log("sending: " + resize.w + " " + resize.h);
+                this.state.socket.emit('resize', resize);
             }}
             key={"rnd-"+token.key}
             id={"rnd-"+token.key}

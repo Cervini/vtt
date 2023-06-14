@@ -178,8 +178,15 @@ socketIo.on("connection",(socket)=>{
     
   });
 
+  socket.on("delete", (data) => {
+    broadcast(data.code, data, "delete");
+  });
   
-})
+  socket.on("resize", (data) => {
+    broadcast(data.code, data, "resize");
+  });
+
+});
 
 server.listen(PORT, err=> {
   if(err)
