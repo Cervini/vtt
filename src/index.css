@@ -108,7 +108,6 @@ body {
     bottom: 0px;
     width: 40px;
     height: 100vh;
-    margin-top: 25px;
     line-height: 50px;
 }
 
@@ -127,26 +126,6 @@ body {
     z-index: 100;
 }
 
-token-bye {
-    display: none;
-    visibility: hidden;
-}
-
-.token-X {
-    position: absolute;
-    margin-top: 0;
-    margin-right: 0;
-    width: 20px;
-    height: 20px;
-    background-color: red;
-    color: aliceblue;
-    z-index: 100;
-    border-radius: 10px;
-    text-align: center;
-    padding-top: 5px;
-    opacity: 0;
-}
-
 .token-X:hover {
     opacity: 1;
 }
@@ -157,8 +136,6 @@ token-bye {
     pointer-events: none;
     height: 100%;
     width: 100%;
-    margin-top: -9px;
-    margin-left: -14px;
 }
 
 .chat {

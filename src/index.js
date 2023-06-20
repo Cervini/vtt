@@ -1,3 +1,4 @@
+//imports
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Rnd } from 'react-rnd';
@@ -15,45 +16,46 @@ let mapFile, tokenFiles = [];
 
 class Table extends React.Component {
 
-    //constructor required room 'code'
     constructor(props){
-
         super(props);
         let socket, username, role;
         if(this.props.type === 'create'){
+            //if the type is create, create a new room
             //room creation routine
             socket = io(ADDRESS);
+            //connect to server
             socket.on('connect', () => {
                 socket.emit('create', {});
             });
+            //set username and rola as DM
             username = 'DM';
             role = 'DM';
         } else {
+            //if the type is join, join an existing room
             //room joining routine
             socket = io(ADDRESS);
             socket.on('connect', () => {
                 socket.emit('join', {code: this.props.code});
             });
+            //set username as Adventurer and role as Player
             username = 'Adventurer';
             role = 'Player';
         }
 
         //socket event listeners
         socket.on('message', (data) => {
+            //create the message object
             const tMessage = {
                 username: data.username,
                 message: data.message
             }
+            //add the message to the messages array
             const updatedMessages = [...this.state.messages, tMessage];
             this.setMessages(updatedMessages);
         });
 
         //set room code when received from server
         socket.on('code',(data) => (this.setState({code:data})));
-
-        socket.on('update', (data) => {
-            this.updatePosition(data.x, data.y, data.key);
-        });
 
         //error handling
         socket.on('connect_error', ()=>{
@@ -69,6 +71,7 @@ class Table extends React.Component {
             this.setState({map: URL.createObjectURL(blobby)});
         });
 
+        //add token and update token position when received from server
         socket.on('token', (data) => {
             const blobby = new Blob([data.file], {type: 'image/jpeg'});
             let arr = this.state.tokens;
@@ -85,10 +88,12 @@ class Table extends React.Component {
             this.setState({tokens: arr});
         });
 
+        //update grid size when received from server
         socket.on('grid', (data) => {
             this.setState({cellSize: data.cellSize});
         });
 
+        //start the update routine when 'state' command received from server
         socket.on('state', (data) => {
             const id = data.id;
             // Emit the mapFile (stored locally when the map was uploaded)
@@ -101,10 +106,12 @@ class Table extends React.Component {
                 this.state.socket.emit('map', dataFile);
             }
             for(let i=0; i < tokenFiles.length; i++){
+                //emit the token files stored locally
                 tokenFiles[i].id = id;
                 this.state.socket.emit('token', tokenFiles[i]);
             }
             for(let i=0; i < this.state.tokens.length; i++){
+                //emit the token positions and token sizes
                 const update = {
                     x: this.state.tokens[i].x,
                     y: this.state.tokens[i].y,
@@ -119,6 +126,7 @@ class Table extends React.Component {
             this.state.socket.emit('grid', {code: this.state.code, cellSize: this.state.cellSize});
         });
 
+        //delete token when received from server
         socket.on('delete', (data) => {
             console.log("delete token");
             for(let i = 0; i < this.state.tokens.length; i++){
@@ -127,8 +135,20 @@ class Table extends React.Component {
                     break;
                 }
             }
+            for(let i=0; i < tokenFiles.length; i++){
+                if(tokenFiles[i].key === data.key){
+                    tokenFiles.splice(i, 1);
+                    break;
+                }
+            }
         });
 
+        //update token position when received from server
+        socket.on('update', (data) => {
+            this.updatePosition(data.x, data.y, data.key);
+        });
+
+        //resize token when received from server
         socket.on('resize' , (data) => {
             for(let i = 0; i < this.state.tokens.length; i++){
                 const arr = this.state.tokens;
@@ -159,10 +179,9 @@ class Table extends React.Component {
             username: username,
             messages: [],
             newMessage: '',
-            files: [],
             height: 570,
-            width: 1290,
-            cellSize: 30,
+            width: 1500,
+            cellSize: 50,
         };
     }
 
@@ -202,6 +221,7 @@ class Table extends React.Component {
         );
     }
 
+    //toggle the user menu
     toggleUserMenu = () =>{
         if(this.state.usermenu){
             this.setState({usermenu: false});
@@ -216,6 +236,8 @@ class Table extends React.Component {
             if(this.state.role === 'DM'){
                 return (
                     <div className='popup DM'>
+
+                    <div className="iconButton"></div>
 
                     <label title='Upload Map' htmlFor='uploadMap'>
                         <MdMap />
@@ -294,6 +316,8 @@ class Table extends React.Component {
 
                     <div title='Clear Room' id="clearRoom" onClick={() => {
                         this.setState({map: battlemap, tokens: []});
+                        tokenFiles = [];
+                        mapFile = null;
                     }}>
                         <FaTrashAlt />
                     </div>
@@ -337,13 +361,17 @@ class Table extends React.Component {
                 e.stopImmediatePropagation();
             }}
             onDragStop={(d) => {
+                //get the changes by the changing CSS
                 const string = document.getElementById("rnd-"+token.key).style.transform;
+                //filter the string to get the x and y values
                 let filtered = /translate\((-?\d+)px, (-?\d+)px\)/;
                 let arr = string.match(filtered);
                 const x = parseInt(arr[1]);
                 const y = parseInt(arr[2]);
+                //update the token position
                 token.x = x;
                 token.y = y;
+                //emit the changes to the server
                 const update = {
                     x: x,
                     y: y,
