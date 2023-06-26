@@ -4,12 +4,29 @@
 
 ## Simple Virtual Tabletop Environment
 
-## Task List
+### How to run
 
- - [x] Dice roll chat commands
- - [x] Updated state on join
- - [x] Synched token
- - [x] Synched map view
- - [x] Synched token view
- - [x] Adjustable grid size
- - [x] Removable tokens
+To launch the platform Node JS must be installed firts.
+
+Install Node JS: https://nodejs.org/en/download/
+
+After Node JS in installed the platform can be viewed by launching the backend and then the frontend.
+
+Launch back end with: launch_backend.bat
+
+Launch front end with: launch_frontend.bat
+
+In alternative open the terminal in the folder backend and run the following commands:
+
+npm install
+npm run dev
+
+Then open the terminal in the main folder and run the following commands:
+
+npm install
+npm start
+
+
+## Future Implementations
+
+ - [ ] Dice roll button

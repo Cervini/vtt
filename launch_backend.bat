@@ -1,4 +1,4 @@
 @echo off
 cd backend
-npm install
-npm run dev
+start cmd.exe /k "call npm run dev"
+pause

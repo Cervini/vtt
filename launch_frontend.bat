@@ -1,3 +1,2 @@
-@echo off
-npm install
-npm start
+start cmd.exe /k "call npm start"
+pause
