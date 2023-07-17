@@ -10,6 +10,8 @@ To launch the platform Node JS must be installed firts.
 
 Install Node JS: https://nodejs.org/en/download/
 
+Install npm with: install.bat
+
 After Node JS in installed the platform can be viewed by launching the backend and then the frontend.
 
 Launch back end with: launch_backend.bat
