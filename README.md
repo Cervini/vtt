@@ -4,7 +4,7 @@
 
 ## Simple Virtual Tabletop Environment
 
-### How to run
+### How to run - On Windows
 
 To launch the platform Node JS must be installed firts.
 
@@ -30,3 +30,6 @@ npm start
 ## Future Implementations
 
  - [ ] Dice roll button
+ - [ ] Saved scenes
+ - [ ] Built-in character sheets
+ - [ ] Skill and ability checks
