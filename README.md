@@ -6,7 +6,7 @@
 
 ### How to run - On Windows
 
-To launch the platform Node JS must be installed firts.
+To launch the platform Node JS must be installed first.
 
 Install Node JS: https://nodejs.org/en/download/
 
@@ -33,7 +33,7 @@ Then open the terminal in the main folder and run the following commands:
 
 ### How to run - On Linux
 
-To launch the platform Node JS must be installed firts.
+To launch the platform Node JS must be installed first.
 
 Install Node JS with the following commands:
 
